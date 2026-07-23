@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>587180029443-2nu1k6b0kl88no2giethpsn6nji6bevc.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.587180029443-2nu1k6b0kl88no2giethpsn6nji6bevc</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCPJr8A082K-S5PhVPdDsrrnrBQkKl0rr8</string>
+	<key>GCM_SENDER_ID</key>
+	<string>587180029443</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.godreams.slide</string>
+	<key>PROJECT_ID</key>
+	<string>the-slide</string>
+	<key>STORAGE_BUCKET</key>
+	<string>the-slide.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:587180029443:ios:ce912e69f55cc5c7</string>
+	<key>DATABASE_URL</key>
+	<string>https://the-slide.firebaseio.com</string>
+</dict>
+</plist>

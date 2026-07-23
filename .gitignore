@@ -1,0 +1,12 @@
+.DS_Store
+
+# Local signing credentials. Keep these outside GitHub.
+keystore.keystore
+pass.txt
+*.keystore
+*.jks
+
+# Local Unity/editor logs and generated files.
+unity-migration-check.log
+*.log
+

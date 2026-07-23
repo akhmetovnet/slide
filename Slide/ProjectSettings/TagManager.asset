@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Wall
+  - Coin
+  - Thorn
+  - Line
+  - WallTrigger
+  - Acceleration
+  - Perfect
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - Hero
+  - Background
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 208198663
+    locked: 0
+  - name: UI
+    uniqueID: 1368517265
+    locked: 0
+  - name: GameObjects
+    uniqueID: 3536534767
+    locked: 0
+  - name: Hero
+    uniqueID: 2514254631
+    locked: 0
+  - name: MainMenu
+    uniqueID: 3022607697
+    locked: 0

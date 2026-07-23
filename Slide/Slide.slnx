@@ -1,0 +1,15 @@
+﻿<Solution>
+  <Project Path="Zenject.csproj" />
+  <Project Path="UniRx.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Zenject-ReflectionBaking-Editor.csproj" />
+  <Project Path="UniRx.Async.csproj" />
+  <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
+  <Project Path="Zenject-Editor.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="UniRx.Examples.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
+  <Project Path="Zenject-TestFramework.csproj" />
+  <Project Path="Zenject-PoolMonitor-Editor.csproj" />
+  <Project Path="UniRx.Async.Editor.csproj" />
+</Solution>
