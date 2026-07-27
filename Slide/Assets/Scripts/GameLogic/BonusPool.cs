@@ -17,6 +17,7 @@ namespace GameLogic
                 return null;
 
             var bonus = _pool.Spawn();
+            bonus.PrepareForSpawn();
             bonus.gameObject.name = $"Bonus {bonus.GetHashCode()}";
             return bonus;
         }

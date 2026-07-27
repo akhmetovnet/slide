@@ -53,6 +53,13 @@ MonoBehaviour:
   _thorn2: {fileID: 3640649746609299777}
   _longLightning: {fileID: 5592763104607596021}
   _audioSource: {fileID: 4246066012406924498}
+  _dischargeFrames:
+  - {fileID: 21300000, guid: 1ccb82d30d4b647b580d3d6f7e988b93, type: 3}
+  - {fileID: 21300002, guid: 1ccb82d30d4b647b580d3d6f7e988b93, type: 3}
+  - {fileID: 21300004, guid: 1ccb82d30d4b647b580d3d6f7e988b93, type: 3}
+  - {fileID: 21300006, guid: 1ccb82d30d4b647b580d3d6f7e988b93, type: 3}
+  - {fileID: 21300008, guid: 1ccb82d30d4b647b580d3d6f7e988b93, type: 3}
+  - {fileID: 21300010, guid: 1ccb82d30d4b647b580d3d6f7e988b93, type: 3}
 --- !u!82 &4246066012406924498
 AudioSource:
   m_ObjectHideFlags: 0

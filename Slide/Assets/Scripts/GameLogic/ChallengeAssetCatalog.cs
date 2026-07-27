@@ -5,12 +5,12 @@ namespace GameLogic
 {
     public static class ChallengeAssetCatalog
     {
-        public const int MissionItemCount = 16;
+        public const int MissionItemCount = 5;
 
         public static Sprite LoadMissionItem(int index)
         {
             var safeIndex = Mathf.Abs(index) % MissionItemCount + 1;
-            return Resources.Load<Sprite>($"Challenge/Items/item_{safeIndex:00}");
+            return Resources.Load<Sprite>($"Challenge/Items/{safeIndex}");
         }
 
         public static Sprite[] LoadHazardFrames(string hazardName)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Collections;
 using System.IO;
@@ -41,7 +42,7 @@ public class HeroController : MonoBehaviour
 	private Transform _transform;
 	private bool _isPerfect;
 	private int _perfectCount;
-	private int _stickyContacts;
+	private readonly HashSet<ChallengeHazardRuntime> _stickyHazards = new HashSet<ChallengeHazardRuntime>();
 	
 	private static readonly int IsSlide = Animator.StringToHash("isSlide");
 	private static readonly int IsBreak = Animator.StringToHash("IsBreak");
@@ -56,6 +57,7 @@ public class HeroController : MonoBehaviour
 
 	private void OnStart()
 	{
+		_stickyHazards.Clear();
 		_transform.localPosition = new Vector3(0, 0.4f, 0);
 	}
 
@@ -116,7 +118,7 @@ public class HeroController : MonoBehaviour
 				var hazard = x.GetComponentInParent<ChallengeHazardRuntime>();
 				return hazard != null && hazard.IsSticky;
 			})
-			.Subscribe(_ => _stickyContacts++)
+			.Subscribe(x => _stickyHazards.Add(x.GetComponentInParent<ChallengeHazardRuntime>()))
 			.AddTo(_compositeDisposable);
 
 		this.OnTriggerExit2DAsObservable()
@@ -125,7 +127,7 @@ public class HeroController : MonoBehaviour
 				var hazard = x.GetComponentInParent<ChallengeHazardRuntime>();
 				return hazard != null && hazard.IsSticky;
 			})
-			.Subscribe(_ => _stickyContacts = Mathf.Max(0, _stickyContacts - 1))
+			.Subscribe(x => _stickyHazards.Remove(x.GetComponentInParent<ChallengeHazardRuntime>()))
 			.AddTo(_compositeDisposable);
 		
 		this.OnTriggerEnter2DAsObservable()
@@ -154,9 +156,21 @@ public class HeroController : MonoBehaviour
 	{
 		if (!_isAcceleration)
 		{
-			var stickyMultiplier = _stickyContacts > 0 ? 0.52f : 1f;
-			_rigidbody.linearVelocity = _direction.normalized * _gameController.CurrentPlayerSpeed * stickyMultiplier;
+			_rigidbody.linearVelocity = _direction.normalized * _gameController.CurrentPlayerSpeed *
+				GetStickyMovementMultiplier();
 		}
+	}
+
+	private float GetStickyMovementMultiplier()
+	{
+		var multiplier = 1f;
+		foreach (var hazard in _stickyHazards)
+		{
+			if (hazard != null && hazard.IsSticky)
+				multiplier = Mathf.Min(multiplier, hazard.StickyMovementMultiplier);
+		}
+
+		return multiplier;
 	}
     
     private void Death(Transform otherTransform)
@@ -202,7 +216,7 @@ public class HeroController : MonoBehaviour
 	{
 		_soundController.PlaySound("death");
 		_currentLine = null;
-		_stickyContacts = 0;
+		_stickyHazards.Clear();
 		_rigidbody.simulated = false;
 		_rigidbody.linearVelocity = Vector2.zero;
 		_rigidbody.angularVelocity = 0;
@@ -215,7 +229,7 @@ public class HeroController : MonoBehaviour
 
 	private void CollectBonus(BonusController bonus)
 	{
-		if (bonus == null)
+		if (bonus == null || !bonus.TryCollect())
 			return;
 
 		if (bonus.Type == BonusType.Acceleration)
@@ -364,7 +378,7 @@ public class HeroController : MonoBehaviour
         _rigidbody.simulated = false;
         _transform.localRotation = Quaternion.identity;
 	    _shieldCounter = 0;
-	    _stickyContacts = 0;
+	    _stickyHazards.Clear();
 	    _shield.SetActive(false);
 	    _animator.SetBool(IsSlide, false);
 	    gameObject.SetActive(true);
@@ -388,7 +402,7 @@ public class HeroController : MonoBehaviour
     public void PreContinue()
     {
 	    _transform.localPosition = _touchLinePosition;
-	    _stickyContacts = 0;
+	    _stickyHazards.Clear();
 	    if(_lastLine != null)
 			_lastLine.isTrigger = false;
 	    gameObject.SetActive(true);

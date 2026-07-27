@@ -22,6 +22,12 @@ MonoBehaviour:
     rustoreLink: https://www.rustore.ru/catalog/app/com.strazed.slide
     appStoreLink: AppStoreLink
     coinsToContinue: 100
+    coinContinuePriceStep: 10
+    continueOfferDuration: 5
+    skipAppearDelay: 2.5
+    skipCloseDuration: 0.16
+    coinContinuesBeforeRewarded: 2
+    rewardedAdStubDelay: 0.5
     skins:
     - price: 100
     - price: 200

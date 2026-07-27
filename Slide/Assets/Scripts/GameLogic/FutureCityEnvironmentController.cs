@@ -7,7 +7,7 @@ namespace GameLogic
     [DefaultExecutionOrder(100)]
     public sealed class FutureCityEnvironmentController : MonoBehaviour
     {
-        private const string RootName = "[Future City Environment]";
+        private const string RootName = "[Location Environment]";
         private const string BackgroundLayer = "Background";
         private const float HorizontalLimit = 1.85f;
 
@@ -23,6 +23,7 @@ namespace GameLogic
         private float _activationCameraY;
         private System.Random _random;
         private Sprite[] _carFrames;
+        private ChallengeLocation _environmentLocation;
 
         public static FutureCityEnvironmentController Create(GameController gameController)
         {
@@ -41,7 +42,8 @@ namespace GameLogic
 
         public void Refresh()
         {
-            SetLocationActive(FutureCityTheme.IsActive(_gameController));
+            EnsureEnvironmentForCurrentLocation();
+            SetLocationActive(IsEnvironmentActive());
         }
 
         private void Initialize(GameController gameController)
@@ -50,17 +52,45 @@ namespace GameLogic
             _camera = Camera.main;
             _random = new System.Random(6010);
 
-            if (_content == null)
-                BuildEnvironment();
-
             Refresh();
         }
 
-        private void BuildEnvironment()
+        private void EnsureEnvironmentForCurrentLocation()
         {
+            var location = GetEnvironmentLocation();
+            if (_content != null && location == _environmentLocation)
+                return;
+
+            SetSceneTheme(ChallengeLocation.DeepBunker);
+            _isLocationActive = false;
+            if (_content != null)
+            {
+                _content.SetActive(false);
+                Destroy(_content);
+                _content = null;
+            }
+
+            _layers.Clear();
+            _actors.Clear();
+            BuildEnvironment(location);
+        }
+
+        private void BuildEnvironment(ChallengeLocation location)
+        {
+            _environmentLocation = location;
             _content = new GameObject("Content");
             _content.transform.SetParent(transform, false);
 
+            if (location == ChallengeLocation.FutureCity)
+                BuildFutureCityEnvironment();
+            else if (location == ChallengeLocation.Jungle)
+                BuildJungleEnvironment();
+
+            _content.SetActive(false);
+        }
+
+        private void BuildFutureCityEnvironment()
+        {
             AddLayer("Sky", "Environment/sky", 0.015f, 0f, 0, 1f);
             AddLayer("Far City", "Environment/city_4", 0.055f, 0f, 10, 1f);
             AddLayer("Mid City A", "Environment/city_3", 0.10f, 0f, 20, 1f);
@@ -70,16 +100,34 @@ namespace GameLogic
             AddLayer("Near Clouds", "Environment/clouds_near", 0.29f, -0.20f, 44, 0.36f);
 
             BuildAmbientActors();
-            _content.SetActive(false);
+        }
+
+        private void BuildJungleEnvironment()
+        {
+            var config = JungleTheme.Config;
+            if (config == null)
+            {
+                Debug.LogWarning("Jungle environment config is missing.");
+                return;
+            }
+
+            foreach (var layer in config.Layers)
+            {
+                if (layer == null || string.IsNullOrEmpty(layer.ResourcePath))
+                    continue;
+
+                AddLayer(layer.Name, layer.ResourcePath, layer.VerticalSpeed,
+                    layer.HorizontalSpeed, layer.SortingOrder, layer.Alpha, layer.Offset);
+            }
         }
 
         private void AddLayer(string name, string resourcePath, float verticalSpeed,
-            float horizontalSpeed, int sortingOrder, float alpha)
+            float horizontalSpeed, int sortingOrder, float alpha, Vector2 offset = default)
         {
-            var sprite = FutureCityTheme.LoadSprite(resourcePath);
+            var sprite = LoadEnvironmentSprite(resourcePath);
             if (sprite == null)
             {
-                Debug.LogWarning("Future City sprite is missing: " + resourcePath);
+                Debug.LogWarning("Location sprite is missing: " + resourcePath);
                 return;
             }
 
@@ -99,7 +147,14 @@ namespace GameLogic
             }
 
             _layers.Add(new ParallaxLayer(layerRoot, renderers, sprite.bounds.size.y,
-                verticalSpeed, horizontalSpeed, alpha));
+                verticalSpeed, horizontalSpeed, alpha, offset));
+        }
+
+        private Sprite LoadEnvironmentSprite(string resourcePath)
+        {
+            return _environmentLocation == ChallengeLocation.Jungle
+                ? Resources.Load<Sprite>("Jungle/" + resourcePath)
+                : FutureCityTheme.LoadSprite(resourcePath);
         }
 
         private void BuildAmbientActors()
@@ -152,7 +207,8 @@ namespace GameLogic
 
         private void LateUpdate()
         {
-            var shouldBeActive = FutureCityTheme.IsActive(_gameController);
+            EnsureEnvironmentForCurrentLocation();
+            var shouldBeActive = IsEnvironmentActive();
             if (shouldBeActive != _isLocationActive)
                 SetLocationActive(shouldBeActive);
 
@@ -231,8 +287,31 @@ namespace GameLogic
 
             _content.SetActive(isActive);
             CacheSceneThemeEntries();
+            SetSceneTheme(isActive ? _environmentLocation : ChallengeLocation.DeepBunker);
+        }
+
+        private void SetSceneTheme(ChallengeLocation location)
+        {
             foreach (var entry in _themeEntries)
-                entry.SetCityTheme(isActive);
+                entry.SetTheme(location);
+        }
+
+        private ChallengeLocation GetEnvironmentLocation()
+        {
+            if (_gameController == null || _gameController.Mode != GameMode.Challenge ||
+                _gameController.CurrentChallengeDefinition == null)
+                return ChallengeLocation.DeepBunker;
+
+            return _gameController.CurrentChallengeDefinition.Location;
+        }
+
+        private bool IsEnvironmentActive()
+        {
+            if (_environmentLocation != ChallengeLocation.FutureCity &&
+                _environmentLocation != ChallengeLocation.Jungle)
+                return false;
+
+            return GetEnvironmentLocation() == _environmentLocation;
         }
 
         private void CacheSceneThemeEntries()
@@ -247,35 +326,26 @@ namespace GameLogic
                 var textureName = renderer.sprite != null && renderer.sprite.texture != null
                     ? renderer.sprite.texture.name
                     : string.Empty;
-                var entry = CreateThemeEntry(renderer, textureName);
-                if (entry != null)
-                    _themeEntries.Add(entry);
+                if (IsThemedTexture(textureName))
+                    _themeEntries.Add(new SceneThemeEntry(renderer, textureName));
             }
         }
 
-        private static SceneThemeEntry CreateThemeEntry(SpriteRenderer renderer, string textureName)
+        private static bool IsThemedTexture(string textureName)
         {
             switch (textureName)
             {
                 case "bg_blue":
-                    return new SceneThemeEntry(renderer, null, true, null);
                 case "fg_wall_l":
-                    return new SceneThemeEntry(renderer, FutureCityTheme.LoadSprite("Start/wall_left"), false, null);
                 case "fg_wall_r":
-                    return new SceneThemeEntry(renderer, FutureCityTheme.LoadSprite("Start/wall_right"), false, null);
                 case "spr_start_platform":
-                    return new SceneThemeEntry(renderer, FutureCityTheme.LoadSprite("Start/start_platform"), false, null);
                 case "start_door":
-                    return new SceneThemeEntry(renderer, FutureCityTheme.LoadSprite("Start/start_door"), false, null);
                 case "door_l":
-                    return new SceneThemeEntry(renderer, FutureCityTheme.LoadSprite("Start/door_left"), false, null);
                 case "door_r":
-                    return new SceneThemeEntry(renderer, FutureCityTheme.LoadSprite("Start/door_right"), false, null);
                 case "vfx_discharge_wall":
-                    return new SceneThemeEntry(renderer, null, false,
-                        FutureCityTheme.LoadFrames("VFX/Wall"));
+                    return true;
                 default:
-                    return null;
+                    return false;
             }
         }
 
@@ -294,9 +364,10 @@ namespace GameLogic
             private readonly float _verticalSpeed;
             private readonly float _horizontalSpeed;
             private readonly float _alpha;
+            private readonly Vector2 _offset;
 
             public ParallaxLayer(Transform root, SpriteRenderer[] renderers, float height,
-                float verticalSpeed, float horizontalSpeed, float alpha)
+                float verticalSpeed, float horizontalSpeed, float alpha, Vector2 offset)
             {
                 _root = root;
                 _renderers = renderers;
@@ -304,6 +375,7 @@ namespace GameLogic
                 _verticalSpeed = verticalSpeed;
                 _horizontalSpeed = horizontalSpeed;
                 _alpha = alpha;
+                _offset = offset;
             }
 
             public void Update(float cameraY, float travel, float time)
@@ -313,7 +385,7 @@ namespace GameLogic
                 var x = _horizontalSpeed == 0f
                     ? 0f
                     : Mathf.Sin(time * Mathf.Abs(_horizontalSpeed)) * 0.055f * Mathf.Sign(_horizontalSpeed);
-                _root.position = new Vector3(x, cameraY + offset, 0f);
+                _root.position = new Vector3(_offset.x + x, cameraY + _offset.y + offset, 0f);
 
                 for (var i = 0; i < _renderers.Length; i++)
                 {
@@ -356,32 +428,28 @@ namespace GameLogic
             private readonly SpriteRenderer _renderer;
             private readonly Sprite _originalSprite;
             private readonly bool _originalEnabled;
-            private readonly Sprite _citySprite;
-            private readonly bool _hideInCity;
-            private readonly Sprite[] _animationFrames;
+            private readonly string _originalTextureName;
             private readonly Animator _animator;
             private readonly bool _animatorWasEnabled;
             private FutureCityFrameAnimator _frameAnimator;
 
-            public SceneThemeEntry(SpriteRenderer renderer, Sprite citySprite, bool hideInCity,
-                Sprite[] animationFrames)
+            public SceneThemeEntry(SpriteRenderer renderer, string originalTextureName)
             {
                 _renderer = renderer;
                 _originalSprite = renderer.sprite;
                 _originalEnabled = renderer.enabled;
-                _citySprite = citySprite;
-                _hideInCity = hideInCity;
-                _animationFrames = animationFrames;
+                _originalTextureName = originalTextureName;
                 _animator = renderer.GetComponent<Animator>();
                 _animatorWasEnabled = _animator != null && _animator.enabled;
             }
 
-            public void SetCityTheme(bool isCity)
+            public void SetTheme(ChallengeLocation location)
             {
                 if (_renderer == null)
                     return;
 
-                if (!isCity)
+                var visual = GetVisual(location, _originalTextureName);
+                if (!visual.IsThemed)
                 {
                     if (_frameAnimator != null)
                         _frameAnimator.Stop();
@@ -392,19 +460,104 @@ namespace GameLogic
                     return;
                 }
 
-                _renderer.enabled = !_hideInCity && _originalEnabled;
-                if (_citySprite != null)
-                    _renderer.sprite = _citySprite;
+                _renderer.enabled = !visual.Hide && _originalEnabled;
+                if (visual.Sprite != null)
+                    _renderer.sprite = visual.Sprite;
 
-                if (_animationFrames == null || _animationFrames.Length == 0)
+                if (visual.AnimationFrames == null || visual.AnimationFrames.Length == 0)
+                {
+                    if (_frameAnimator != null)
+                        _frameAnimator.Stop();
+                    if (_animator != null)
+                        _animator.enabled = _animatorWasEnabled;
                     return;
+                }
 
                 if (_animator != null)
                     _animator.enabled = false;
                 if (_frameAnimator == null)
                     _frameAnimator = _renderer.gameObject.AddComponent<FutureCityFrameAnimator>();
-                _frameAnimator.Play(_renderer, _animationFrames, 10f,
+                _frameAnimator.Play(_renderer, visual.AnimationFrames, visual.FramesPerSecond,
                     Mathf.Abs(_renderer.GetEntityId().GetHashCode() % 10) * 0.03f);
+            }
+
+            private static LocationVisual GetVisual(ChallengeLocation location, string textureName)
+            {
+                if (location == ChallengeLocation.FutureCity)
+                    return GetFutureCityVisual(textureName);
+                if (location == ChallengeLocation.Jungle)
+                    return GetJungleVisual(textureName);
+                return default;
+            }
+
+            private static LocationVisual GetFutureCityVisual(string textureName)
+            {
+                switch (textureName)
+                {
+                    case "bg_blue": return LocationVisual.Hidden;
+                    case "fg_wall_l": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/wall_left"));
+                    case "fg_wall_r": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/wall_right"));
+                    case "spr_start_platform": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/start_platform"));
+                    case "start_door": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/start_door"));
+                    case "door_l": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/door_left"));
+                    case "door_r": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/door_right"));
+                    case "vfx_discharge_wall": return LocationVisual.Animated(FutureCityTheme.LoadFrames("VFX/Wall"), 10f);
+                    default: return default;
+                }
+            }
+
+            private static LocationVisual GetJungleVisual(string textureName)
+            {
+                var config = JungleTheme.Config;
+                if (config == null)
+                    return default;
+
+                var visuals = config.Visuals;
+                switch (textureName)
+                {
+                    case "bg_blue": return LocationVisual.Hidden;
+                    case "fg_wall_l": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.LeftWallPath));
+                    case "fg_wall_r": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.RightWallPath));
+                    case "spr_start_platform": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.StartPlatformPath));
+                    case "start_door": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.StartDoorFramePath));
+                    case "door_l": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.LeftDoorPath));
+                    case "door_r": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.RightDoorPath));
+                    case "vfx_discharge_wall": return LocationVisual.Animated(
+                        JungleTheme.LoadFrames(visuals.WallVfxPath), 10f);
+                    default: return default;
+                }
+            }
+
+            private readonly struct LocationVisual
+            {
+                public static readonly LocationVisual Hidden = new LocationVisual(true, true, null, null, 0f);
+
+                public readonly bool IsThemed;
+                public readonly bool Hide;
+                public readonly Sprite Sprite;
+                public readonly Sprite[] AnimationFrames;
+                public readonly float FramesPerSecond;
+
+                private LocationVisual(bool isThemed, bool hide, Sprite sprite, Sprite[] animationFrames,
+                    float framesPerSecond)
+                {
+                    IsThemed = isThemed;
+                    Hide = hide;
+                    Sprite = sprite;
+                    AnimationFrames = animationFrames;
+                    FramesPerSecond = framesPerSecond;
+                }
+
+                public static LocationVisual SpriteOnly(Sprite sprite)
+                {
+                    return new LocationVisual(sprite != null, false, sprite, null, 0f);
+                }
+
+                public static LocationVisual Animated(Sprite[] frames, float framesPerSecond)
+                {
+                    return new LocationVisual(frames != null && frames.Length > 0, false, null,
+                        frames, framesPerSecond);
+                }
             }
         }
     }

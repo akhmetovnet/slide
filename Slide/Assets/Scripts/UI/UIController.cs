@@ -90,6 +90,7 @@ namespace UI
         [Inject] private SoundController _soundController;
         [Inject] private UnityStore _unityStore;
         [Inject] private ScreenshotController _screenshotController;
+        [Inject] private IRewardedAdService _rewardedAdService;
 
         private int _modeCount;
         private int _halfHeight;
@@ -105,14 +106,14 @@ namespace UI
         private float _survivalTime;
         private float _videoTime;
         private int _continueCount;
+        private int _consecutiveCoinContinues;
+        private bool _continueOfferPending;
         private Transform _settingsTransform;
         private Transform _deathTransform;
         private Transform _continueTransform;
         private Transform _skinsTransform;
         private Text _challengeObjectiveText;
         private static readonly int StartAnimation = Animator.StringToHash("Start");
-        private const float ContinueOfferDuration = 5f;
-        private const float ContinueSkipDelay = 2.5f;
 
         public Text GameCoins => _gameCoins;
         public Text FailCoins => _failCoins;
@@ -150,8 +151,23 @@ namespace UI
             _continueTransform = _continueOfferView != null ? _continueOfferView.transform : _continuePanel.transform.GetChild(0);
             _skinsTransform = _skinsPanel.transform.GetChild(0);
 
+            if (_resultMenuView == null &&
+                _tableHightScore != null &&
+                _tableHightScore.transform.parent != _deathTransform)
+            {
+                var leaderboardRect = _tableHightScore.transform as RectTransform;
+                if (leaderboardRect != null)
+                {
+                    leaderboardRect.SetParent(_deathTransform, false);
+                    leaderboardRect.anchorMin = leaderboardRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    leaderboardRect.pivot = new Vector2(0.5f, 0.5f);
+                    leaderboardRect.anchoredPosition = new Vector2(0f, 20f);
+                    leaderboardRect.sizeDelta = new Vector2(190f, 126f);
+                }
+            }
+
             if (_continueOfferView != null)
-                _continueOfferView.Configure(SkipContinue, () => VideoCheat(true), () => CoinsCheat(true));
+                _continueOfferView.Configure(SkipContinue, RequestRewardedContinue, TryCoinContinue);
             if (_resultMenuView != null)
                 _resultMenuView.Configure(() => PlayGame(false), OpenSkinsPanel, OpenMissionsFromResult, () => OpenMainMenu(false));
             
@@ -223,12 +239,16 @@ namespace UI
         private void OnHeroDie()
         {
             _soundController.PlayMusic("menu_theme", true);
-            
             _isGame = false;
+            if (_continueOfferPending)
+                return;
+
+            _continueOfferPending = true;
 
             Observable.Timer(TimeSpan.FromSeconds(.5f))
                 .Subscribe(_ =>
                 {
+                    _continueOfferPending = false;
                     if (_gameController.Mode == GameMode.Challenge)
                         OpenContinuePanel();
                     else
@@ -249,7 +269,7 @@ namespace UI
                 _gamePanel.SetActive(true);
                 _continuePanel.SetActive(false);
                 if (_continueOfferView != null)
-                    _continueOfferView.Hide();
+                    _continueOfferView.Close();
                 _gameController.PreContinue();
                 var sequence = DOTween.Sequence();
                 sequence.AppendCallback(() => _continueTimer.text = "3")
@@ -304,17 +324,31 @@ namespace UI
         {
             if (_continueOfferView != null)
             {
+                if (_gameController.Mode != GameMode.Challenge ||
+                    (_continueOfferView.State != ContinueOfferState.Hidden &&
+                     _continueOfferView.State != ContinueOfferState.Closed))
+                    return;
+
+                if (!_continueOfferView.CanShow)
+                {
+                    Debug.LogError("Continue offer UI is not configured. Opening final result instead.");
+                    OpenResultPanel(false);
+                    return;
+                }
+
                 _gamePanel.SetActive(false);
                 _deathPanel.SetActive(false);
                 _continuePanel.SetActive(true);
+                Time.timeScale = 0f;
                 _continueOfferView.Show(
-                    ContinueOfferDuration,
-                    ContinueSkipDelay,
+                    _settings.continueOfferDuration,
+                    _settings.skipAppearDelay,
+                    _settings.skipCloseDuration,
+                    _gameController.LastCoins,
                     _gameController.Points,
-                    _gameController.CurrentLevel,
                     _gameController.Coins,
                     ContinuePrice,
-                    RewardedContinueAvailable);
+                    CoinContinueAllowedByRule);
                 return;
             }
 
@@ -393,13 +427,18 @@ namespace UI
 
         }
 
-        private int ContinuePrice => _settings.coinsToContinue + _continueCount * 10;
-
-        // No rewarded provider is included in the first RuStore release.
-        private bool RewardedContinueAvailable => false;
+        private int ContinuePrice => _settings.coinsToContinue +
+                                     _continueCount * Mathf.Max(0, _settings.coinContinuePriceStep);
+        private bool CoinContinueAllowedByRule =>
+            _consecutiveCoinContinues < Mathf.Max(1, _settings.coinContinuesBeforeRewarded);
 
         private void SkipContinue()
         {
+            _rewardedAdService.Cancel();
+            if (_continueOfferView != null)
+                _continueOfferView.Close();
+            _continueCount = 0;
+            _consecutiveCoinContinues = 0;
             _continuePanel.SetActive(false);
             OpenResultPanel(false);
         }
@@ -407,6 +446,23 @@ namespace UI
         private void OpenResultPanel(bool isWin)
         {
             _isGame = false;
+            _continueOfferPending = false;
+            _continueCount = 0;
+            _consecutiveCoinContinues = 0;
+            _rewardedAdService.Cancel();
+            if (_continueOfferView != null)
+                _continueOfferView.Close();
+
+            if (!isWin)
+                _gameController.FinalizeFailedAttempt();
+
+            if (_resultMenuView == null)
+            {
+                Time.timeScale = 1f;
+                OpenDeathPanel();
+                return;
+            }
+
             _gamePanel.SetActive(false);
             _continuePanel.SetActive(false);
             _deathPanel.SetActive(true);
@@ -515,6 +571,10 @@ namespace UI
             
             _soundController.PlaySound("push_button");
             
+            _rewardedAdService.Cancel();
+            if (_continueOfferView != null)
+                _continueOfferView.Close();
+            Time.timeScale = 1f;
             _isGame = false;
             _deathPanel.SetActive(false);
             _continuePanel.SetActive(false);
@@ -623,8 +683,14 @@ namespace UI
             
             if(_isGame || (_isAnimation && isMainMenu)) return;
             
+            _rewardedAdService.Cancel();
+            if (_continueOfferView != null)
+                _continueOfferView.Close();
+            _continueOfferPending = false;
+            Time.timeScale = 1f;
             _isGame = true;
             _continueCount = 0;
+            _consecutiveCoinContinues = 0;
             if (isMainMenu)
                 _gameController.BeginNewSession();
             if (isMainMenu)
@@ -712,36 +778,68 @@ namespace UI
         {
             _soundController.PlaySound("push_button");
 
-            if (isContinue && !RewardedContinueAvailable)
-            {
-                if (_continueOfferView != null)
-                    _continueOfferView.SetStatus("РЕКЛАМА НЕДОСТУПНА");
-                return;
-            }
-            
-          // _appodeal.ShowRewardedVideo(isContinue);
-          
-          // _firebaseController.SimpleLog("ShowViewAds");
-          
-          // _firebaseController.SimpleIntLog("VideoAds", "Time", (int)(Time.time - _videoTime));
-          _videoTime = Time.time;
+            if (isContinue)
+                RequestRewardedContinue();
         }
         
         public void CoinsCheat(bool isContinue)
         {
-            _soundController.PlaySound("push_button");
+            if (isContinue)
+                TryCoinContinue();
+        }
 
-            var price = isContinue ? ContinuePrice : _settings.coinsToContinue;
-            if (!_gameController.TrySpendCoins(price))
-            {
-                if (_continueOfferView != null)
-                    _continueOfferView.SetStatus("НЕДОСТАТОЧНО МОНЕТ");
+        private void RequestRewardedContinue()
+        {
+            if (_continueOfferView == null ||
+                _continueOfferView.State != ContinueOfferState.ContinueProcessing ||
+                _rewardedAdService.IsShowing)
                 return;
+
+            _soundController.PlaySound("push_button");
+            _rewardedAdService.Show(() =>
+            {
+                _consecutiveCoinContinues = 0;
+                ResumeFromContinue();
+            });
+        }
+
+        private bool TryCoinContinue()
+        {
+            if (_continueOfferView == null ||
+                (_continueOfferView.State != ContinueOfferState.Countdown &&
+                 _continueOfferView.State != ContinueOfferState.SkipAvailable))
+                return false;
+
+            if (!CoinContinueAllowedByRule)
+            {
+                _continueOfferView.SetStatus("ИСПОЛЬЗУЙТЕ РЕКЛАМУ");
+                return false;
             }
 
-            if (isContinue)
-                _continueCount++;
-            _signalBus.Fire(new Video() {isContinue = isContinue, isFinished = true}); 
+            _soundController.PlaySound("push_button");
+            if (!_gameController.TrySpendCoins(ContinuePrice))
+            {
+                _continueOfferView.SetStatus("НЕДОСТАТОЧНО МОНЕТ");
+                return false;
+            }
+
+            _continueCount++;
+            _consecutiveCoinContinues++;
+            _continueOfferView.SetBalance(_gameController.Coins);
+            Observable.NextFrame().Subscribe(_ => ResumeFromContinue()).AddTo(gameObject);
+            return true;
+        }
+
+        private void ResumeFromContinue()
+        {
+            _rewardedAdService.Cancel();
+            _continueOfferPending = false;
+            _continueOfferView.Close();
+            _continuePanel.SetActive(false);
+            Time.timeScale = 1f;
+            _isGame = true;
+            _gamePanel.SetActive(true);
+            _gameController.ContinueFromOffer();
         }
 
         public void OpenCloseSoscialSlider()
@@ -794,6 +892,11 @@ namespace UI
         {
             _soundController.PlaySound("push_button");
             _unityStore.RestorePurchases();
+        }
+
+        private void OnDestroy()
+        {
+            _rewardedAdService?.Cancel();
         }
 
         public void RateUs()

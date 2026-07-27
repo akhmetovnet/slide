@@ -32,6 +32,10 @@ namespace Installers
             Container.BindInstance(_missionsController).AsSingle();
             Container.BindInstance(_soundController).AsSingle();
             Container.BindInstance(_screenshotController).AsSingle();
+            Container.Bind<IRewardedAdService>()
+                .To<RewardedAdStub>()
+                .FromNewComponentOn(_uiController.gameObject)
+                .AsSingle();
             // Container.Bind<FirebaseController>().AsSingle();
             Container.BindInstance(_storeController).AsSingle();
             // Container.Bind<AppodealController>().AsSingle();

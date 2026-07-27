@@ -75,7 +75,8 @@ public sealed class ChallengeBalanceTests
             .Where(x => x.Objective == ChallengeObjectiveType.CollectItems)
             .Select(x => x.MissionItemVariant)
             .ToArray();
-        Assert.That(assignedItems, Is.EqualTo(Enumerable.Range(0, ChallengeAssetCatalog.MissionItemCount)));
+        Assert.That(assignedItems.All(x => x >= 0 && x < ChallengeAssetCatalog.MissionItemCount), Is.True);
+        Assert.That(assignedItems.Distinct(), Is.EqualTo(Enumerable.Range(0, ChallengeAssetCatalog.MissionItemCount)));
 
         Assert.That(ChallengeAssetCatalog.LoadHazard("spike"), Is.Not.Null);
         Assert.That(ChallengeAssetCatalog.LoadHazard("sticky"), Is.Not.Null);

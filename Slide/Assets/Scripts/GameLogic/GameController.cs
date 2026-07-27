@@ -51,6 +51,7 @@ namespace GameLogic
         private int _lastCompletedChallengeLevel;
         private FutureCityEnvironmentController _futureCityEnvironment;
         private ChallengeObjectiveController _challengeObjective;
+        private bool _failureFinalized;
 
         public GameMode Mode
         {
@@ -144,15 +145,23 @@ namespace GameLogic
 
         private void CheckRecord()
         {
+            _heroIsDie = true;
+        }
+
+        public void FinalizeFailedAttempt()
+        {
+            if (_failureFinalized)
+                return;
+
+            _failureFinalized = true;
             if (_points.Value > _currentRecord)
             {
                 _currentRecord = _points.Value;
                 PlayerPrefs.SetInt("Record", _points.Value);
             }
-            PlayerPrefs.SetInt("Coins", _coins.Value);
-            _heroIsDie = true;
 
-//          _missionsController.Check(_gameMode, MissionTarget.Die);
+            PlayerPrefs.SetInt("Coins", _coins.Value);
+            PlayerPrefs.Save();
         }
         
         
@@ -193,6 +202,7 @@ namespace GameLogic
         {
             _futureCityEnvironment?.Refresh();
             _isTutorial = PlayerPrefs.GetInt("Tutorial", 0) == 0;
+            _failureFinalized = false;
             
             if (_heroIsDie)
             {
@@ -315,6 +325,13 @@ namespace GameLogic
         public void ContinueGame()
         {
             _heroController.ContinueGame();
+        }
+
+        public void ContinueFromOffer()
+        {
+            _heroIsDie = false;
+            PreContinue();
+            ContinueGame();
         }
 
         private void OnApplicationQuit()

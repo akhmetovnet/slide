@@ -52,6 +52,7 @@ public static class MissionMenuSceneBuilder
         CreateFullSolid("BackgroundTint", canvasRoot, new Color(0.02f, 0.12f, 0.18f, 0.27f), false);
 
         var scrollRoot = CreateFullRect("MissionScroll", canvasRoot);
+        scrollRoot.gameObject.AddComponent<SafeAreaLayout>();
         var scrollSurface = scrollRoot.gameObject.AddComponent<Image>();
         scrollSurface.color = Color.clear;
         scrollSurface.raycastTarget = true;
@@ -489,7 +490,7 @@ public static class MissionMenuSceneBuilder
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1280f, 2304f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 1f;
+        scaler.matchWidthOrHeight = 0.5f;
 
         return canvasObject.transform as RectTransform;
     }

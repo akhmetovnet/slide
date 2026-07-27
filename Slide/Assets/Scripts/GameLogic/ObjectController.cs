@@ -168,7 +168,10 @@ namespace GameLogic
                 return;
             }
 
-            bonus.Init(bonusType.Value, challenge?.MissionItemVariant ?? 0);
+            var missionItemVariant = bonusType.Value == BonusType.MissionItem
+                ? Random.Range(0, ChallengeAssetCatalog.MissionItemCount)
+                : 0;
+            bonus.Init(bonusType.Value, missionItemVariant);
             var positionX = Random.Range(-_settings.fieldWidht, _settings.fieldWidht);
             if (bonus.Type == BonusType.Acceleration)
             {

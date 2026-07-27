@@ -46,7 +46,10 @@ public class CameraController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!_uiController.IsGame || !_heroController.gameObject.activeInHierarchy)
+        // Scene services can be injected after the camera's first frame when
+        // entering Play Mode from the editor.
+        if (_uiController == null || _heroController == null || _gameSettings == null ||
+            !_uiController.IsGame || !_heroController.gameObject.activeInHierarchy)
             return;
 
         var targetY = _heroController.transform.position.y - _gameSettings.offset.y;

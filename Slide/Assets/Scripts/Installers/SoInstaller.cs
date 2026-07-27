@@ -40,6 +40,12 @@ namespace Installers
             public string rustoreLink;
             public string appStoreLink;
             public int coinsToContinue;
+            public int coinContinuePriceStep = 10;
+            public float continueOfferDuration = 5f;
+            public float skipAppearDelay = 2.5f;
+            public float skipCloseDuration = 0.16f;
+            public int coinContinuesBeforeRewarded = 2;
+            public float rewardedAdStubDelay = 0.5f;
             public SkinSettings[] skins;
             public BonusSettings bonusSettings;
             public ThornSettings thornSettings;

@@ -860,7 +860,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: RUSTORE_BUILD
+    Android: RUSTORE_BUILD;SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY
     iPhone: 
   additionalCompilerArguments: {}
   platformArchitecture: {}

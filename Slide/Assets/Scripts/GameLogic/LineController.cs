@@ -28,8 +28,11 @@ namespace GameLogic
 		private float _defaultAngle;
 		private float _currentAngle;
 		private Sprite[] _cityPlatforms;
+		private ChallengeLocation _platformLocation;
 		private Sprite[] _rocketFrames;
 		private GameObject[] _rockets;
+		private SpriteRenderer[] _rocketRenderers;
+		private FutureCityFrameAnimator[] _rocketAnimations;
 		private Tween _movementTween;
 
 		public float Angle => Mathf.PI*AngleDegree/180;
@@ -102,7 +105,8 @@ namespace GameLogic
 				return;
 
 			var isFutureCity = FutureCityTheme.IsActive(_gameController);
-			if (!isFutureCity)
+			var isJungle = JungleTheme.IsActive(_gameController);
+			if (!isFutureCity && !isJungle)
 			{
 				_renderer.sprite = _originalSprite;
 				ResetPlatformGeometry();
@@ -110,12 +114,16 @@ namespace GameLogic
 				return;
 			}
 
-			if (_cityPlatforms == null || _cityPlatforms.Length == 0)
-				_cityPlatforms = FutureCityTheme.LoadFrames("Platforms");
+			var location = isJungle ? ChallengeLocation.Jungle : ChallengeLocation.FutureCity;
+			if (_cityPlatforms == null || _cityPlatforms.Length == 0 || _platformLocation != location)
+			{
+				_cityPlatforms = isJungle ? JungleTheme.LoadPlatformFrames() : FutureCityTheme.LoadFrames("Platforms");
+				_platformLocation = location;
+			}
 			var challenge = _gameController.CurrentChallengeDefinition;
 			if (_cityPlatforms.Length > 0)
 			{
-				var availableVariants = challenge == null || challenge.Level <= 3
+				var availableVariants = isJungle ? _cityPlatforms.Length : challenge == null || challenge.Level <= 3
 					? 1
 					: challenge.Level <= 7 ? 2 : _cityPlatforms.Length;
 				availableVariants = Mathf.Clamp(availableVariants, 1, _cityPlatforms.Length);
@@ -126,7 +134,8 @@ namespace GameLogic
 			var movingChance = challenge?.MovingPlatformChance ?? 0.12f;
 			var deterministicRoll = Mathf.Abs(Mathf.Sin((index + 1) * 12.9898f));
 			var isMovingPlatform = index > 1 && !isLast && deterministicRoll < movingChance;
-			SetRocketsActive(isMovingPlatform);
+			var rocketFrames = isJungle ? JungleTheme.LoadRocketFrames() : FutureCityTheme.LoadFrames("Rockets");
+			SetRocketsActive(isMovingPlatform, rocketFrames);
 			if (!isMovingPlatform)
 				return;
 
@@ -168,22 +177,29 @@ namespace GameLogic
 			_collider.transform.localRotation = Quaternion.Euler(0f, 0f, _currentAngle);
 		}
 
-		private void SetRocketsActive(bool isActive)
+		private void SetRocketsActive(bool isActive, Sprite[] frames = null)
 		{
 			if (!isActive && _rockets == null)
 				return;
 
 			if (_rockets == null)
-				CreateRockets();
+				CreateRockets(frames);
 
-			foreach (var rocket in _rockets)
-				rocket.SetActive(isActive);
+			for (var i = 0; i < _rockets.Length; i++)
+			{
+				_rockets[i].SetActive(isActive);
+				if (isActive && frames != null && frames.Length > 0)
+					_rocketAnimations[i].Play(_rocketRenderers[i], frames, 12f,
+						i * 0.08f);
+			}
 		}
 
-		private void CreateRockets()
+		private void CreateRockets(Sprite[] frames)
 		{
-			_rocketFrames = FutureCityTheme.LoadFrames("Rockets");
+			_rocketFrames = frames ?? Array.Empty<Sprite>();
 			_rockets = new GameObject[2];
+			_rocketRenderers = new SpriteRenderer[_rockets.Length];
+			_rocketAnimations = new FutureCityFrameAnimator[_rockets.Length];
 			for (var i = 0; i < _rockets.Length; i++)
 			{
 				var rocket = new GameObject("Platform Rocket " + (i + 1));
@@ -193,7 +209,10 @@ namespace GameLogic
 				renderer.sortingLayerID = _renderer.sortingLayerID;
 				renderer.sortingOrder = _renderer.sortingOrder + 1;
 				var animation = rocket.AddComponent<FutureCityFrameAnimator>();
-				animation.Play(renderer, _rocketFrames, 12f, i * 0.08f);
+				if (_rocketFrames.Length > 0)
+					animation.Play(renderer, _rocketFrames, 12f, i * 0.08f);
+				_rocketRenderers[i] = renderer;
+				_rocketAnimations[i] = animation;
 				_rockets[i] = rocket;
 			}
 		}

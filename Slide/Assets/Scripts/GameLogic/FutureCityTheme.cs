@@ -7,9 +7,6 @@ namespace GameLogic
 {
     public static class FutureCityTheme
     {
-        public const int FirstMission = 1;
-        public const int LastMission = 10;
-
         private static readonly Dictionary<string, Sprite> SpriteCache =
             new Dictionary<string, Sprite>();
         private static readonly Dictionary<string, Sprite[]> FrameCache =
@@ -19,8 +16,8 @@ namespace GameLogic
         {
             return gameController != null &&
                    gameController.Mode == GameMode.Challenge &&
-                   gameController.CurrentLevel >= FirstMission &&
-                   gameController.CurrentLevel <= LastMission;
+                   gameController.CurrentChallengeDefinition != null &&
+                   gameController.CurrentChallengeDefinition.Location == ChallengeLocation.FutureCity;
         }
 
         public static Sprite LoadSprite(string path)

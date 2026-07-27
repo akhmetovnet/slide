@@ -163,12 +163,14 @@ namespace GameLogic
                     ObstacleSpeedMultiplier = Mathf.Lerp(0.85f, 1.75f, (level - 1f) / 49f),
                     MovingPlatformChance = level < 8 ? 0f : Mathf.Lerp(0.08f, 0.3f, (level - 8f) / 42f),
                     MissionItemChance = isCollectMission ? 0.88f : 0f,
-                    MissionItemVariant = isCollectMission ? collectItemIndex++ : 0,
+                    MissionItemVariant = isCollectMission
+                        ? collectItemIndex++ % ChallengeAssetCatalog.MissionItemCount
+                        : 0,
                     RivalPlatformsPerSecond = GetRivalSpeed(level, objectives[i]),
                     RivalStartLead = objectives[i] == ChallengeObjectiveType.CatchCriminal ? 4f : 0f,
                     RivalEscapeLead = Mathf.Lerp(10f, 7f, (level - 1f) / 49f),
                     CaptureDistance = 0.6f,
-                    HazardWeights = GetHazardWeights(level)
+                    HazardWeights = GetHazardWeights(GetLocation(level), level)
                 };
             }
 
@@ -210,8 +212,15 @@ namespace GameLogic
             return baseSpeed + Mathf.Clamp01((level - 1f) / 49f) * 0.22f;
         }
 
-        private static ChallengeHazardWeights GetHazardWeights(int level)
+        private static ChallengeHazardWeights GetHazardWeights(ChallengeLocation location, int level)
         {
+            if (location == ChallengeLocation.Jungle)
+            {
+                var jungleConfig = JungleTheme.Config;
+                if (jungleConfig != null)
+                    return jungleConfig.Hazards.HazardWeights;
+            }
+
             if (level <= 5)
             {
                 return new ChallengeHazardWeights
@@ -232,28 +241,14 @@ namespace GameLogic
                 };
             }
 
-            if (level <= 20)
-            {
-                return new ChallengeHazardWeights
-                {
-                    StaticBomb = 0.24f,
-                    MovingBomb = 0.24f,
-                    Laser = 0.24f,
-                    Drone = 0.14f,
-                    RotatingSpikes = 0.14f
-                };
-            }
-
             if (level <= 30)
             {
                 return new ChallengeHazardWeights
                 {
-                    StaticBomb = 0.16f,
-                    MovingBomb = 0.22f,
-                    Laser = 0.2f,
-                    Drone = 0.14f,
-                    RotatingSpikes = 0.14f,
-                    PopUpSpikes = 0.14f
+                    StaticBomb = 0.24f,
+                    MovingBomb = 0.28f,
+                    Laser = 0.27f,
+                    Drone = 0.21f
                 };
             }
 
@@ -261,26 +256,19 @@ namespace GameLogic
             {
                 return new ChallengeHazardWeights
                 {
-                    StaticBomb = 0.14f,
-                    MovingBomb = 0.2f,
-                    Laser = 0.18f,
-                    Drone = 0.14f,
-                    RotatingSpikes = 0.13f,
-                    PopUpSpikes = 0.12f,
-                    StickySurface = 0.09f
+                    StaticBomb = 0.21f,
+                    MovingBomb = 0.28f,
+                    Laser = 0.27f,
+                    Drone = 0.24f
                 };
             }
 
             return new ChallengeHazardWeights
             {
-                StaticBomb = 0.1f,
-                MovingBomb = 0.16f,
-                Laser = 0.14f,
-                Drone = 0.12f,
-                RotatingSpikes = 0.14f,
-                PopUpSpikes = 0.12f,
-                StickySurface = 0.1f,
-                RotatingLaser = 0.12f
+                StaticBomb = 0.18f,
+                MovingBomb = 0.3f,
+                Laser = 0.27f,
+                Drone = 0.25f
             };
         }
     }

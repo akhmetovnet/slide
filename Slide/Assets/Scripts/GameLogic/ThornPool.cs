@@ -18,6 +18,7 @@ namespace GameLogic
                 return null;
 
             var thorn = _pool.Spawn();
+            thorn.PrepareForSpawn();
             thorn.gameObject.name = $"Thorn {thorn.GetHashCode()}";
             return thorn;
         }
