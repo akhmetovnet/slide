@@ -68,6 +68,7 @@ namespace GameLogic
         public int CurrentLevel => _currentLevel;
         public int Points => _points.Value;
         public int Record => Mathf.Max(_currentRecord, _points.Value);
+        public int PlatformsPassed => _lineCounter;
         public int SessionLevelsCompleted => _sessionLevelsCompleted;
         public int LastCompletedChallengeLevel => _lastCompletedChallengeLevel;
         public bool IsVabrate => _uiController.VibrationIsOn;
@@ -100,16 +101,16 @@ namespace GameLogic
 
             _points.Value = _currentRecord;
             
-            _points.SubscribeToText(_uiController.GamePoints, p => p.ToString());
-            _points.SubscribeToText(_uiController.FailPoints, p => p.ToString());
-            _points.SubscribeToText(_uiController.ClearPoints, p => p.ToString());
-            _points.SubscribeToText(_uiController.DeathRecord, p => p.ToString());
-            _points.Scan(int.MinValue, Mathf.Max).SubscribeToText(_uiController.DeathBestRecord, p => p.ToString());
-            _points.Scan(int.MinValue, Mathf.Max).SubscribeToText(_uiController.Record, p => p.ToString());
-            _coins.SubscribeToText(_uiController.GameCoins, c => c.ToString());
-            _coins.SubscribeToText(_uiController.FailCoins, c => c.ToString());
-            _coins.SubscribeToText(_uiController.ClearCoins, c => c.ToString());
-            _coins.SubscribeToText(_uiController.StoreCoins, c => c.ToString());
+            SubscribeToTextIfPresent(_points, _uiController.GamePoints);
+            SubscribeToTextIfPresent(_points, _uiController.FailPoints);
+            SubscribeToTextIfPresent(_points, _uiController.ClearPoints);
+            SubscribeToTextIfPresent(_points, _uiController.DeathRecord);
+            SubscribeToTextIfPresent(_points.Scan(int.MinValue, Mathf.Max), _uiController.DeathBestRecord);
+            SubscribeToTextIfPresent(_points.Scan(int.MinValue, Mathf.Max), _uiController.Record);
+            SubscribeToTextIfPresent(_coins, _uiController.GameCoins);
+            SubscribeToTextIfPresent(_coins, _uiController.FailCoins);
+            SubscribeToTextIfPresent(_coins, _uiController.ClearCoins);
+            SubscribeToTextIfPresent(_coins, _uiController.StoreCoins);
             
             _signalBus.Subscribe<TouchLine>(HeroTouchLine);
             _signalBus.Subscribe<TouchBonus>(HeroTouchBonus);
@@ -141,6 +142,14 @@ namespace GameLogic
                 _challengeObjective = gameObject.AddComponent<ChallengeObjectiveController>();
             _challengeObjective.Initialize(this, _heroController, _objectController, _uiController);
             _futureCityEnvironment = FutureCityEnvironmentController.Create(this);
+        }
+
+        private static void SubscribeToTextIfPresent(
+            IObservable<int> source,
+            Text target)
+        {
+            if (target != null)
+                source.SubscribeToText(target, value => value.ToString());
         }
 
         private void CheckRecord()
@@ -275,6 +284,8 @@ namespace GameLogic
             _lastCompletedChallengeLevel = completedLevel;
             _currentLevel = ChallengeProgress.CompleteLevel(completedLevel);
             _missionsController.Check(Mode, MissionTarget.Level);
+            PlayerPrefs.SetInt("Coins", _coins.Value);
+            PlayerPrefs.Save();
             _heroController.Pause();
 
             Debug.Log($"Challenge level {completedLevel} completed");

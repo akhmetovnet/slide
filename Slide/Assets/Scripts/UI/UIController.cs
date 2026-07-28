@@ -76,7 +76,6 @@ namespace UI
         [SerializeField] private RectTransform _socialSliderTransform;
         [SerializeField] private Sprite[] _socialSliderSprites;
         [SerializeField] private MissionView _missionView;
-        [SerializeField] private TableEntryPool _tableHightScore;
         [SerializeField] private GameObject[] _rustoreHiddenObjects;
         [SerializeField] private ContinueOfferView _continueOfferView;
         [SerializeField] private ResultMenuView _resultMenuView;
@@ -89,6 +88,7 @@ namespace UI
         // [Inject] private AppodealController _appodeal;
         [Inject] private SoundController _soundController;
         [Inject] private UnityStore _unityStore;
+        [Inject] private StoreController _storeController;
         [Inject] private ScreenshotController _screenshotController;
         [Inject] private IRewardedAdService _rewardedAdService;
 
@@ -151,25 +151,14 @@ namespace UI
             _continueTransform = _continueOfferView != null ? _continueOfferView.transform : _continuePanel.transform.GetChild(0);
             _skinsTransform = _skinsPanel.transform.GetChild(0);
 
-            if (_resultMenuView == null &&
-                _tableHightScore != null &&
-                _tableHightScore.transform.parent != _deathTransform)
-            {
-                var leaderboardRect = _tableHightScore.transform as RectTransform;
-                if (leaderboardRect != null)
-                {
-                    leaderboardRect.SetParent(_deathTransform, false);
-                    leaderboardRect.anchorMin = leaderboardRect.anchorMax = new Vector2(0.5f, 0.5f);
-                    leaderboardRect.pivot = new Vector2(0.5f, 0.5f);
-                    leaderboardRect.anchoredPosition = new Vector2(0f, 20f);
-                    leaderboardRect.sizeDelta = new Vector2(190f, 126f);
-                }
-            }
-
             if (_continueOfferView != null)
                 _continueOfferView.Configure(SkipContinue, RequestRewardedContinue, TryCoinContinue);
             if (_resultMenuView != null)
-                _resultMenuView.Configure(() => PlayGame(false), OpenSkinsPanel, OpenMissionsFromResult, () => OpenMainMenu(false));
+                _resultMenuView.Configure(
+                    HandleResultPrimary,
+                    OpenSkinsPanel,
+                    OpenMissionsFromResult,
+                    PurchaseResultProduct);
             
             _soundController.PlayMusic("menu_theme", false);
             
@@ -290,7 +279,8 @@ namespace UI
             }
             else
             {
-                _doubleButton.SetActive(false);
+                if (_doubleButton != null)
+                    _doubleButton.SetActive(false);
                 // _firebaseController.SimpleLog("DoubleCoins");
 
             }
@@ -409,11 +399,6 @@ namespace UI
             // _doubleButton.SetActive(_appodeal.RewardedVideoIsLoaded && _gameController.LastCoins > 0);
             _doubleText.text = $"+{_gameController.LastCoins} COINS"; 
 
-            // Hightscore table maked cells and ranked game result
-            
-            int currRecord = Convert.ToInt32(DeathRecord.text);
-            _tableHightScore.CreateRandomTable(currRecord);
-            
             // if (_gameController.LastCoins > 0)
             // {
             //     Firebase.Analytics.Parameter[] parameters = { new Firebase.Analytics.Parameter("Count", _gameController.LastCoins)};
@@ -466,21 +451,70 @@ namespace UI
             _gamePanel.SetActive(false);
             _continuePanel.SetActive(false);
             _deathPanel.SetActive(true);
+            Time.timeScale = 0f;
 
             var missionNumber = isWin
                 ? Mathf.Max(1, _gameController.LastCompletedChallengeLevel)
                 : Mathf.Max(1, _gameController.CurrentLevel);
+            var offerCursor = PlayerPrefs.GetInt("RestartOfferCursor", 0);
+            var offer = _storeController.GetRestartOffer(offerCursor);
+            if (!isWin)
+            {
+                PlayerPrefs.SetInt("RestartOfferCursor", offerCursor + 1);
+                PlayerPrefs.Save();
+            }
+
+            var offerPrice = offer == null
+                ? string.Empty
+                : _unityStore.GetLocalizedPrice(offer.ProductId);
+            var offerAvailable = offer != null &&
+                                 _unityStore.IsProductAvailable(offer.ProductId);
+            var showNoAds = PlayerPrefs.GetInt("NoAds", 0) == 0;
+            var noAdsPrice = showNoAds
+                ? _unityStore.GetLocalizedPrice("no_ads")
+                : string.Empty;
 
             _resultMenuView.Show(
                 isWin,
                 _gameController.Mode,
+                _gameController.Coins,
                 _gameController.Points,
                 _gameController.Record,
+                _gameController.PlatformsPassed,
+                _gameController.LastCoins,
                 _gameController.SessionLevelsCompleted,
-                missionNumber);
+                missionNumber,
+                offer,
+                offerPrice,
+                offerAvailable,
+                showNoAds,
+                noAdsPrice,
+                showNoAds && _unityStore.IsProductAvailable("no_ads"));
+        }
 
-            if (_gameController.Mode == GameMode.Survival && _tableHightScore != null)
-                _tableHightScore.CreateRandomTable(_gameController.Points);
+        private void HandleResultPrimary(bool isWin)
+        {
+            _soundController.PlaySound("push_button");
+            if (!isWin)
+            {
+                PlayGame(false);
+                return;
+            }
+
+            if (_rewardedAdService.IsShowing)
+                return;
+
+            _rewardedAdService.Show(() => PlayGame(false));
+        }
+
+        private void PurchaseResultProduct(string productId)
+        {
+            if (string.IsNullOrEmpty(productId) ||
+                !_unityStore.IsProductAvailable(productId))
+                return;
+
+            _soundController.PlaySound("push_button");
+            _unityStore.BuyProductID(productId);
         }
 
         private void OpenMissionsFromResult()
@@ -877,6 +911,8 @@ namespace UI
         {
             _noAds = true;
             PlayerPrefs.SetInt("NoAds", 1);
+            PlayerPrefs.Save();
+            _resultMenuView?.SetNoAdsEntitled();
             // _appodeal.ShowBanner(false);
         }
 

@@ -222,6 +222,19 @@ public class UnityStore : IStoreListener
                 ? product.metadata.localizedPrice.ToString(CultureInfo.CurrentCulture)
                 : product.metadata.localizedPriceString;
         }
+
+        public bool IsProductAvailable(string productId)
+        {
+#if UNITY_ANDROID && RUSTORE_BUILD
+            return false;
+#else
+            if (!IsInitialized())
+                return false;
+
+            var product = m_StoreController.products.WithID(productId);
+            return product != null && product.availableToPurchase;
+#endif
+        }
 }
 #else
 public class UnityStore
@@ -253,6 +266,11 @@ public class UnityStore
     public string GetLocalizedPrice(string iapId)
     {
         return string.Empty;
+    }
+
+    public bool IsProductAvailable(string productId)
+    {
+        return false;
     }
 }
 #endif

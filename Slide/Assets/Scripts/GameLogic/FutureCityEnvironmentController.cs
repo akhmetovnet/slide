@@ -116,13 +116,19 @@ namespace GameLogic
                 if (layer == null || string.IsNullOrEmpty(layer.ResourcePath))
                     continue;
 
+                var offset = layer.Offset;
+                if (layer.AlignBottomToBaseline)
+                    offset.y = config.CityBaselineY;
+
                 AddLayer(layer.Name, layer.ResourcePath, layer.VerticalSpeed,
-                    layer.HorizontalSpeed, layer.SortingOrder, layer.Alpha, layer.Offset);
+                    layer.HorizontalSpeed, layer.SortingOrder, layer.Alpha, offset,
+                    layer.VerticalRepeatMultiplier, layer.AlignBottomToBaseline);
             }
         }
 
         private void AddLayer(string name, string resourcePath, float verticalSpeed,
-            float horizontalSpeed, int sortingOrder, float alpha, Vector2 offset = default)
+            float horizontalSpeed, int sortingOrder, float alpha, Vector2 offset = default,
+            float verticalRepeatMultiplier = 1f, bool alignBottomToBaseline = false)
         {
             var sprite = LoadEnvironmentSprite(resourcePath);
             if (sprite == null)
@@ -146,8 +152,11 @@ namespace GameLogic
                 renderers[i] = renderer;
             }
 
-            _layers.Add(new ParallaxLayer(layerRoot, renderers, sprite.bounds.size.y,
-                verticalSpeed, horizontalSpeed, alpha, offset));
+            var repeatHeight = sprite.bounds.size.y * Mathf.Max(1f, verticalRepeatMultiplier);
+            var tileContentOffsetY = alignBottomToBaseline ? -sprite.bounds.min.y : 0f;
+            _layers.Add(new ParallaxLayer(layerRoot, renderers, repeatHeight,
+                verticalSpeed, horizontalSpeed, alpha, offset, tileContentOffsetY,
+                alignBottomToBaseline));
         }
 
         private Sprite LoadEnvironmentSprite(string resourcePath)
@@ -365,9 +374,12 @@ namespace GameLogic
             private readonly float _horizontalSpeed;
             private readonly float _alpha;
             private readonly Vector2 _offset;
+            private readonly float _tileContentOffsetY;
+            private readonly bool _usesTravelParallax;
 
             public ParallaxLayer(Transform root, SpriteRenderer[] renderers, float height,
-                float verticalSpeed, float horizontalSpeed, float alpha, Vector2 offset)
+                float verticalSpeed, float horizontalSpeed, float alpha, Vector2 offset,
+                float tileContentOffsetY, bool usesTravelParallax)
             {
                 _root = root;
                 _renderers = renderers;
@@ -376,6 +388,8 @@ namespace GameLogic
                 _horizontalSpeed = horizontalSpeed;
                 _alpha = alpha;
                 _offset = offset;
+                _tileContentOffsetY = tileContentOffsetY;
+                _usesTravelParallax = usesTravelParallax;
             }
 
             public void Update(float cameraY, float travel, float time)
@@ -384,12 +398,17 @@ namespace GameLogic
                              _height * 0.5f;
                 var x = _horizontalSpeed == 0f
                     ? 0f
-                    : Mathf.Sin(time * Mathf.Abs(_horizontalSpeed)) * 0.055f * Mathf.Sign(_horizontalSpeed);
+                    : Mathf.Sin((_usesTravelParallax ? travel : time) * Mathf.Abs(_horizontalSpeed)) *
+                      (_usesTravelParallax ? 0.12f : 0.055f) *
+                      Mathf.Sign(_horizontalSpeed);
                 _root.position = new Vector3(_offset.x + x, cameraY + _offset.y + offset, 0f);
 
                 for (var i = 0; i < _renderers.Length; i++)
                 {
-                    _renderers[i].transform.localPosition = new Vector3(0f, (i - 1) * _height, 0f);
+                    _renderers[i].transform.localPosition = new Vector3(
+                        0f,
+                        (i - 1) * _height + _tileContentOffsetY,
+                        0f);
                     var pulse = 0.96f + Mathf.Sin(time * 0.45f + i) * 0.04f;
                     _renderers[i].color = new Color(1f, 1f, 1f, _alpha * pulse);
                 }

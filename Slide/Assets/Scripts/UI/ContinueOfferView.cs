@@ -28,6 +28,8 @@ namespace UI
         [SerializeField] private TMP_Text _balanceText;
         [SerializeField] private TMP_Text _priceText;
         [SerializeField] private TMP_Text _statusText;
+        [Header("Inspector visual overrides")]
+        [SerializeField] private Color _passedValueColor = new Color32(7, 48, 65, 255);
         [SerializeField] private Button _rewardedButton;
         [SerializeField] private Button _coinsButton;
         [SerializeField] private Button _skipButton;
@@ -57,9 +59,15 @@ namespace UI
             if (_canvasGroup == null)
                 _canvasGroup = GetComponent<CanvasGroup>();
             ConfigureLegacyHierarchy();
+            ApplyPassedValueColor();
 
             if (_skipNormalTransform != null)
                 _skipPosition = _skipNormalTransform.anchoredPosition;
+        }
+
+        private void OnValidate()
+        {
+            ApplyPassedValueColor();
         }
 
         public bool CanShow =>
@@ -113,7 +121,7 @@ namespace UI
             if (_collectedText != null)
                 _collectedText.text = collected.ToString();
             if (_passedText != null)
-                _passedText.text = $"{passed} M";
+                _passedText.text = $"{passed}M";
             _balanceText.text = balance.ToString();
             _priceText.text = price.ToString();
             if (_statusText != null)
@@ -304,6 +312,12 @@ namespace UI
             var maskImage = legacyPriceMask.GetComponent<Image>();
             if (maskImage != null)
                 maskImage.color = new Color32(43, 225, 228, 255);
+        }
+
+        private void ApplyPassedValueColor()
+        {
+            if (_passedText != null)
+                _passedText.color = _passedValueColor;
         }
 
         private void NormalizeNestedReferenceCanvas()

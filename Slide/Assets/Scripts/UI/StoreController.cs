@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UI;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -85,6 +86,35 @@ public class StoreController : MonoBehaviour
             _skinPrice.text = string.Empty;
         }
 #endif
+    }
+
+    public RestartOfferDefinition GetRestartOffer(int sequence)
+    {
+        EnsureUnboughtSkins();
+        UpdateSkins();
+
+        if (_unboughtSkins.Count > 0)
+        {
+            var order = Mathf.Abs(sequence) % _unboughtSkins.Count;
+            var skinIndex = _unboughtSkins[order];
+            return new RestartOfferDefinition(
+                $"skin{skinIndex + 1}",
+                _skins[skinIndex - OFFSET],
+                "НОВЫЙ ПЕРСОНАЖ",
+                "ОТКРОЙ НОВЫЙ ОБЛИК",
+                order,
+                RestartOfferType.Skin,
+                RestartOfferFallbackState.Disabled);
+        }
+
+        return new RestartOfferDefinition(
+            "all_pack",
+            _skins != null && _skins.Length > 0 ? _skins[0] : null,
+            "НАБОР ПЕРСОНАЖЕЙ",
+            "ВСЕ ПРЕМИАЛЬНЫЕ ОБЛИКИ",
+            0,
+            RestartOfferType.Bundle,
+            RestartOfferFallbackState.Disabled);
     }
 
     public void BuySkin()

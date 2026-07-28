@@ -12,60 +12,77 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78e59a3d1a5b4cbd9e1f3624b2ca60f3, type: 3}
   m_Name: JungleEnvironmentConfig
   m_EditorClassIdentifier: 
+  _cityBaselineY: 0
   _layers:
   - Name: Sky
     ResourcePath: Environment/sky
     Offset: {x: 0, y: 0}
     VerticalSpeed: 0.015
+    VerticalRepeatMultiplier: 1
+    AlignBottomToBaseline: 0
     HorizontalSpeed: 0
     SortingOrder: 0
     Alpha: 1
-  - Name: Far Clouds
+  - Name: Sky 1
     ResourcePath: Environment/clouds_far
     Offset: {x: 0, y: 0}
-    VerticalSpeed: 0.06
+    VerticalSpeed: 0.035
+    VerticalRepeatMultiplier: 1
+    AlignBottomToBaseline: 0
     HorizontalSpeed: 0.12
-    SortingOrder: 5
+    SortingOrder: 1
     Alpha: 0.72
-  - Name: Far City
-    ResourcePath: Environment/city_far
-    Offset: {x: 0, y: 0}
-    VerticalSpeed: 0.08
-    HorizontalSpeed: 0
-    SortingOrder: 10
-    Alpha: 1
-  - Name: Mid City
-    ResourcePath: Environment/city_mid
-    Offset: {x: 0, y: 0}
-    VerticalSpeed: 0.13
-    HorizontalSpeed: 0
-    SortingOrder: 20
-    Alpha: 1
-  - Name: Near Clouds
+  - Name: Sky 2
     ResourcePath: Environment/clouds_near
     Offset: {x: 0, y: 0}
-    VerticalSpeed: 0.07
+    VerticalSpeed: 0.05
+    VerticalRepeatMultiplier: 1
+    AlignBottomToBaseline: 0
     HorizontalSpeed: -0.1
-    SortingOrder: 8
+    SortingOrder: 2
     Alpha: 0.52
-  - Name: Near City
+  - Name: City 4
+    ResourcePath: Environment/city_far
+    Offset: {x: 0, y: 0}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 1.902
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0.03
+    SortingOrder: 10
+    Alpha: 1
+  - Name: City 3
+    ResourcePath: Environment/city_mid
+    Offset: {x: 0, y: 0}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 2.1073
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0.06
+    SortingOrder: 20
+    Alpha: 1
+  - Name: City 2
     ResourcePath: Environment/city_near
     Offset: {x: 0, y: 0}
-    VerticalSpeed: 0.21
-    HorizontalSpeed: 0
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 2.8445
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0.09
     SortingOrder: 30
     Alpha: 1
-  - Name: Foreground City
+  - Name: City 1
     ResourcePath: Environment/city_foreground
     Offset: {x: 0, y: 0}
-    VerticalSpeed: 0.27
-    HorizontalSpeed: 0
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 3.7793
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0.12
     SortingOrder: 40
     Alpha: 1
   - Name: Glass
     ResourcePath: Environment/glass
     Offset: {x: 0, y: 0}
     VerticalSpeed: 0.31
+    VerticalRepeatMultiplier: 1
+    AlignBottomToBaseline: 0
     HorizontalSpeed: -0.05
     SortingOrder: 50
     Alpha: 0.42

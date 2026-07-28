@@ -8,10 +8,12 @@ namespace GameLogic
         [SerializeField] private JungleParallaxLayer[] _layers = new JungleParallaxLayer[0];
         [SerializeField] private JungleVisualResources _visuals = new JungleVisualResources();
         [SerializeField] private JungleHazardSettings _hazards = new JungleHazardSettings();
+        [SerializeField] private float _cityBaselineY;
 
         public JungleParallaxLayer[] Layers => _layers;
         public JungleVisualResources Visuals => _visuals;
         public JungleHazardSettings Hazards => _hazards;
+        public float CityBaselineY => _cityBaselineY;
     }
 
     [System.Serializable]
@@ -21,6 +23,8 @@ namespace GameLogic
         public string ResourcePath;
         public Vector2 Offset;
         [Range(0f, 1f)] public float VerticalSpeed;
+        [Min(1f)] public float VerticalRepeatMultiplier = 1f;
+        public bool AlignBottomToBaseline;
         [Range(-1f, 1f)] public float HorizontalSpeed;
         public int SortingOrder;
         [Range(0f, 1f)] public float Alpha = 1f;
