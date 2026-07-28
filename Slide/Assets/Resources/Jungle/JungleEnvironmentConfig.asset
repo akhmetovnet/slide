@@ -73,7 +73,7 @@ MonoBehaviour:
     Offset: {x: 0, y: 0}
     VerticalSpeed: 0.12
     VerticalRepeatMultiplier: 3.7793
-    AlignBottomToBaseline: 1
+    AlignBottomToBaseline: 0
     HorizontalSpeed: 0.12
     SortingOrder: 40
     Alpha: 1

@@ -81,7 +81,7 @@ public sealed class JungleEnvironmentConfigTests
     }
 
     [Test]
-    public void JungleLayersUseReferenceOrderAndSharedCityBaseline()
+    public void JungleLayersKeepForegroundAnchorAndShareCityBaseline()
     {
         var config = Resources.Load<JungleEnvironmentConfig>("Jungle/JungleEnvironmentConfig");
         Assert.That(config, Is.Not.Null);
@@ -104,7 +104,7 @@ public sealed class JungleEnvironmentConfigTests
         }
 
         const float sharedRepeatHeight = 8.05f;
-        for (var index = 3; index <= 6; index++)
+        for (var index = 3; index <= 5; index++)
         {
             var city = config.Layers[index];
             var sprite = Resources.Load<Sprite>("Jungle/" + city.ResourcePath);
@@ -121,6 +121,9 @@ public sealed class JungleEnvironmentConfigTests
                     Is.GreaterThan(config.Layers[index - 1].HorizontalSpeed), city.Name);
             }
         }
+
+        Assert.That(config.Layers[6].AlignBottomToBaseline, Is.False,
+            "City 1 uses its built-in grass horizon as the foreground anchor.");
     }
 }
 #endif
