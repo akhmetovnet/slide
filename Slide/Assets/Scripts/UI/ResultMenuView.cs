@@ -10,7 +10,6 @@ namespace UI
     {
         [SerializeField] private TMP_Text _balanceText;
         [SerializeField] private TMP_Text _recordText;
-        [SerializeField] private TMP_Text _detailsText;
         [SerializeField] private TMP_Text _missionText;
         [SerializeField] private PixelNumberView _scoreView;
         [SerializeField] private Image _primaryImage;
@@ -24,7 +23,6 @@ namespace UI
         [SerializeField] private Sprite _continuePressed;
         [SerializeField] private GameObject _storeOfferRoot;
         [SerializeField] private GameObject _noAdsRoot;
-        [SerializeField] private TMP_Text _noAdsPriceText;
         [SerializeField] private Button _noAdsButton;
 
         private Action<bool> _primaryAction;
@@ -57,15 +55,11 @@ namespace UI
             int balance,
             int score,
             int record,
-            int passed,
-            int collected,
-            int sessionLevels,
             int missionNumber,
             RestartOfferDefinition offer,
             string offerPrice,
             bool offerAvailable,
             bool showNoAds,
-            string noAdsPrice,
             bool noAdsAvailable)
         {
             gameObject.SetActive(true);
@@ -76,9 +70,6 @@ namespace UI
             _balanceText.text = $"БАЛАНС: {balance}";
             _scoreView.SetValue(score, true);
             _recordText.text = $"РЕКОРД: {record}М";
-            _detailsText.text =
-                $"ПРОЙДЕНО: {passed}М    СОБРАНО: {collected}\n" +
-                $"УРОВНЕЙ ЗА СЕССИЮ: {sessionLevels}";
 
             var isChallenge = mode == GameMode.Challenge;
             _missionText.gameObject.SetActive(isChallenge);
@@ -91,7 +82,6 @@ namespace UI
             _noAdsRoot.SetActive(showNoAds);
             if (showNoAds)
             {
-                _noAdsPriceText.text = string.IsNullOrEmpty(noAdsPrice) ? "НЕДОСТУПНО" : noAdsPrice;
                 _noAdsButton.interactable = noAdsAvailable;
             }
         }

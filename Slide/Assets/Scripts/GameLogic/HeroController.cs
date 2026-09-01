@@ -46,19 +46,19 @@ public class HeroController : MonoBehaviour
 	
 	private static readonly int IsSlide = Animator.StringToHash("isSlide");
 	private static readonly int IsBreak = Animator.StringToHash("IsBreak");
+	private const float StartDoorHeroOffsetY = -0.08f;
 
 	[Inject]
 	public void Construct(SignalBus signalBus)
 	{
 		_signalBus = signalBus;
 		
-		_signalBus.Subscribe<ClearAll>(OnStart);
+		_signalBus.Subscribe<ClearAll>(OnClearAll);
 	}
 
-	private void OnStart()
+	private void OnClearAll()
 	{
 		_stickyHazards.Clear();
-		_transform.localPosition = new Vector3(0, 0.4f, 0);
 	}
 
 	// Use this for initialization
@@ -370,8 +370,9 @@ public class HeroController : MonoBehaviour
 	    _signalBus.Fire(new Perfect(){count = _perfectCount});
     }
 
-    public void Reset()
+    public void Reset(Transform startDoor)
     {
+	    PlaceAtStartPosition(startDoor);
 	    _currentLine = null;
 	    _rigidbody.linearVelocity = Vector2.zero;
 	    _rigidbody.angularVelocity = 0;
@@ -382,6 +383,14 @@ public class HeroController : MonoBehaviour
 	    _shield.SetActive(false);
 	    _animator.SetBool(IsSlide, false);
 	    gameObject.SetActive(true);
+    }
+
+    public void PlaceAtStartPosition(Transform startDoor)
+    {
+        if (startDoor == null)
+            return;
+
+        transform.position = startDoor.TransformPoint(Vector3.up * StartDoorHeroOffsetY);
     }
 
     public void Hide()

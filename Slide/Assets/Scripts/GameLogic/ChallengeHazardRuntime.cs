@@ -24,7 +24,8 @@ namespace GameLogic
         private FutureCityFrameAnimator _barrierFrameAnimator;
 
         private ThornType _type = ThornType.None;
-        private JungleHazardSettings _settings;
+        private LocationHazardSettings _settings;
+        private LocationConfig _config;
         private float _speedMultiplier;
         private float _elapsed;
         private float _stickyMovementMultiplier = 1f;
@@ -58,11 +59,22 @@ namespace GameLogic
 
         public void Configure(ThornType type, float speedMultiplier)
         {
-            var config = JungleTheme.Config;
-            Configure(type, speedMultiplier, config != null ? config.Hazards : null);
+            Configure(type, speedMultiplier, LocationCatalog.Get(ChallengeLocation.Jungle));
         }
 
         public void Configure(ThornType type, float speedMultiplier, JungleHazardSettings settings)
+        {
+            Configure(type, speedMultiplier, LocationHazardSettings.FromLegacy(settings),
+                LocationCatalog.Get(ChallengeLocation.Jungle));
+        }
+
+        public void Configure(ThornType type, float speedMultiplier, LocationConfig config)
+        {
+            Configure(type, speedMultiplier, config != null ? config.Hazards : null, config);
+        }
+
+        private void Configure(ThornType type, float speedMultiplier,
+            LocationHazardSettings settings, LocationConfig config)
         {
             if (settings == null)
             {
@@ -73,6 +85,7 @@ namespace GameLogic
             ResetState(false);
             _type = type;
             _settings = settings;
+            _config = config;
             _speedMultiplier = Mathf.Max(0.01f, speedMultiplier);
             _elapsed = 0f;
             _startRotation = Quaternion.Euler(0f, 0f, GetStartAngle(type));
@@ -107,7 +120,7 @@ namespace GameLogic
 
         private void ConfigureRotatingSpikes()
         {
-            PlayFrames(_settings.RotatingSpikesPlaceholderPath, 12f * _speedMultiplier);
+            PlayFrames(_settings.RotatingSpikesVisualPath, 12f * _speedMultiplier);
             transform.localScale = Vector3.one * _settings.RotatingSpikesScale;
             EnsureSpikeColliders(_settings.RotatingSpikesSectionCount,
                 _settings.RotatingSpikesSectionDistance, _settings.RotatingSpikesColliderRadius);
@@ -116,7 +129,7 @@ namespace GameLogic
 
         private void ConfigurePopUpSpikes()
         {
-            _renderer.sprite = LoadSprite(_settings.PopUpSpikesPlaceholderPath);
+            _renderer.sprite = LoadSprite(_settings.PopUpSpikesVisualPath);
             transform.localPosition = new Vector3(0f, _settings.PopUpHiddenHeight, 0f);
             transform.localScale = new Vector3(1.8f, 0.8f, 1f);
             _areaCollider.size = _settings.PopUpColliderSize;
@@ -138,11 +151,17 @@ namespace GameLogic
 
         private void ConfigureRotatingLaser()
         {
+            if (_config == null || _config.HazardVisuals == null)
+            {
+                Clear();
+                return;
+            }
+
             EnsureBarrierVisuals();
-            var visuals = JungleTheme.Config.Visuals;
-            _barrierLeftRenderer.sprite = JungleTheme.LoadSprite(visuals.BarrierLeftPath);
-            _barrierRightRenderer.sprite = JungleTheme.LoadSprite(visuals.BarrierRightPath);
-            var frames = JungleTheme.LoadFrames(visuals.BarrierVfxPath);
+            var visuals = _config.HazardVisuals;
+            _barrierLeftRenderer.sprite = LocationTheme.LoadSprite(_config, visuals.BarrierLeftPath);
+            _barrierRightRenderer.sprite = LocationTheme.LoadSprite(_config, visuals.BarrierRightPath);
+            var frames = LocationTheme.LoadFrames(_config, visuals.BarrierVfxPath);
             _renderer.sprite = frames.Length > 0 ? frames[0] : null;
             _renderer.enabled = false;
             _barrierFrameAnimator.Play(_barrierVfxRenderer, frames, 10f);
@@ -238,15 +257,22 @@ namespace GameLogic
             _frameAnimator.Play(_renderer, frames, framesPerSecond);
         }
 
-        private static Sprite LoadSprite(string resourcePath)
+        private Sprite LoadSprite(string resourcePath)
         {
-            return string.IsNullOrEmpty(resourcePath) ? null : Resources.Load<Sprite>(resourcePath);
+            if (string.IsNullOrEmpty(resourcePath))
+                return null;
+            return _config != null
+                ? LocationTheme.LoadSprite(_config, resourcePath)
+                : Resources.Load<Sprite>(resourcePath);
         }
 
-        private static Sprite[] LoadFrames(string resourcePath)
+        private Sprite[] LoadFrames(string resourcePath)
         {
             if (string.IsNullOrEmpty(resourcePath))
                 return Array.Empty<Sprite>();
+
+            if (_config != null)
+                return LocationTheme.LoadFrames(_config, resourcePath);
 
             if (!FrameCache.TryGetValue(resourcePath, out var frames))
             {
@@ -357,6 +383,7 @@ namespace GameLogic
             _barrierFrameAnimator?.Stop();
             _type = ThornType.None;
             _settings = null;
+            _config = null;
             _elapsed = 0f;
             _stickyMovementMultiplier = 1f;
             if (_areaCollider != null)

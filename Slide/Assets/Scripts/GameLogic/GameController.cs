@@ -30,6 +30,7 @@ namespace GameLogic
         [Inject] private HeroController _heroController;
         [Inject] private ObjectController _objectController;
         [Inject] private UIController _uiController;
+        [Inject] private CameraController _cameraController;
         [Inject] private SoInstaller.GameSettings _settings;
         [Inject] private MissionsController _missionsController;
         // [Inject] private FirebaseController _firebase;
@@ -142,6 +143,7 @@ namespace GameLogic
                 _challengeObjective = gameObject.AddComponent<ChallengeObjectiveController>();
             _challengeObjective.Initialize(this, _heroController, _objectController, _uiController);
             _futureCityEnvironment = FutureCityEnvironmentController.Create(this);
+            _heroController.PlaceAtStartPosition(_leftDoor != null ? _leftDoor.parent : null);
         }
 
         private static void SubscribeToTextIfPresent(
@@ -228,7 +230,8 @@ namespace GameLogic
                 _challengeObjective.Begin(_currentLevel);
             else
                 _challengeObjective.End();
-            _heroController.Reset();
+            _heroController.Reset(_leftDoor != null ? _leftDoor.parent : null);
+            _cameraController.ForceSnapToHero();
             _objectController.GenerateField(_isTutorial);
 
             var sequence = DOTween.Sequence();

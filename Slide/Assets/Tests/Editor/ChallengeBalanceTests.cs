@@ -39,13 +39,18 @@ public sealed class ChallengeBalanceTests
         Assert.That(ChallengeLevelCatalog.Get(9).HazardWeights.MovingBomb, Is.LessThan(0.2f));
         Assert.That(ChallengeLevelCatalog.Get(10).HazardWeights.MovingBomb, Is.EqualTo(0.2f).Within(0.001f));
         Assert.That(ChallengeLevelCatalog.Get(10).HazardWeights.RotatingSpikes, Is.Zero);
-        Assert.That(ChallengeLevelCatalog.Get(11).HazardWeights.RotatingSpikes, Is.GreaterThan(0f));
-        Assert.That(ChallengeLevelCatalog.Get(20).HazardWeights.PopUpSpikes, Is.Zero);
-        Assert.That(ChallengeLevelCatalog.Get(21).HazardWeights.PopUpSpikes, Is.GreaterThan(0f));
-        Assert.That(ChallengeLevelCatalog.Get(30).HazardWeights.StickySurface, Is.Zero);
-        Assert.That(ChallengeLevelCatalog.Get(31).HazardWeights.StickySurface, Is.GreaterThan(0f));
-        Assert.That(ChallengeLevelCatalog.Get(40).HazardWeights.RotatingLaser, Is.Zero);
-        Assert.That(ChallengeLevelCatalog.Get(41).HazardWeights.RotatingLaser, Is.GreaterThan(0f));
+
+        foreach (var level in new[] { 11, 20 })
+        {
+            var jungle = ChallengeLevelCatalog.Get(level).HazardWeights;
+            Assert.That(jungle.RotatingSpikes, Is.GreaterThan(0f));
+            Assert.That(jungle.PopUpSpikes, Is.GreaterThan(0f));
+            Assert.That(jungle.StickySurface, Is.GreaterThan(0f));
+            Assert.That(jungle.RotatingLaser, Is.GreaterThan(0f));
+        }
+
+        Assert.That(ChallengeLevelCatalog.Get(21).HazardWeights.PopUpSpikes, Is.Zero,
+            "Locations without a config must retain the legacy hazard pool.");
     }
 
     [Test]

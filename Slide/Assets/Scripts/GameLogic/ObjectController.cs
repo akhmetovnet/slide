@@ -144,9 +144,12 @@ namespace GameLogic
         private void PopulateLine(LineController line, int index, bool isTutorial)
         {
             var challenge = _gameController.CurrentChallengeDefinition;
-            var spawnHazard = _gameController.Mode == GameMode.Survival ||
-                              challenge == null ||
-                              Random.value < challenge.HazardChance;
+            var bonus = _bonusPool.GetBonus();
+            var bonusType = bonus != null ? GetBonusType(index, challenge) : null;
+            var spawnHazard = IsLineAvailableForHazard(bonusType) &&
+                              (_gameController.Mode == GameMode.Survival ||
+                               challenge == null ||
+                               Random.value < challenge.HazardChance);
             if (spawnHazard)
             {
                 var thorn = _thornPool.GetThorn();
@@ -157,11 +160,9 @@ namespace GameLogic
                 }
             }
 
-            var bonus = _bonusPool.GetBonus();
             if (bonus == null)
                 return;
 
-            var bonusType = GetBonusType(index, challenge);
             if (bonusType == null)
             {
                 _bonusPool.ReturnBonus(bonus);
@@ -180,6 +181,11 @@ namespace GameLogic
             }
             bonus.SetPosition(positionX, line.Angle, index);
             _activeBonuses.Add(bonus);
+        }
+
+        public static bool IsLineAvailableForHazard(BonusType? bonusType)
+        {
+            return bonusType != BonusType.MissionItem;
         }
 
         private BonusType? GetBonusType(int index, ChallengeLevelDefinition challenge)

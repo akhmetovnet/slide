@@ -270,7 +270,7 @@ PlayerSettings:
   AndroidAllowedArchitectures: -1
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
-  AndroidKeystoreName: /Users/timurahmetov/Desktop/SLIDE-Dev/keystore.keystore
+  AndroidKeystoreName: 
   AndroidKeyaliasName: upload
   AndroidEnableArmv9SecurityFeatures: 0
   AndroidEnableArm64MTE: 0
@@ -860,7 +860,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: RUSTORE_BUILD;SENTIS_ANALYTICS_ENABLED;APP_UI_EDITOR_ONLY
+    Android: RUSTORE_BUILD;APP_UI_EDITOR_ONLY;SENTIS_ANALYTICS_ENABLED
     iPhone: 
   additionalCompilerArguments: {}
   platformArchitecture: {}

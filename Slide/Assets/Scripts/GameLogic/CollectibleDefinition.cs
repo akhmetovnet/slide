@@ -10,8 +10,9 @@ namespace GameLogic
     public static class CollectibleDefinition
     {
         public const float CoinVisualDiameter = 0.56f;
-        public const float MissionItemVisualDiameter = 0.62f;
-        public const float MaxMissionItemVisualDiameter = CoinVisualDiameter * 1.25f;
+        // Match the common enemy height (bomb/static hazard) instead of the larger coin icon.
+        public const float MissionItemVisualDiameter = 0.34f;
+        public const float MaxMissionItemVisualDiameter = MissionItemVisualDiameter;
 
         public static float GetMissionItemScale(Sprite sprite)
         {

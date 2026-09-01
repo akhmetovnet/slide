@@ -35,6 +35,16 @@ public class CameraController : MonoBehaviour
         transform.DOShakePosition(.5f, .5f);
     }
 
+    public void ForceSnapToHero()
+    {
+        if (_heroController == null || _gameSettings == null)
+            return;
+
+        transform.DOKill();
+        var targetY = _heroController.transform.position.y - _gameSettings.offset.y;
+        transform.position = new Vector3(0f, targetY, transform.position.z);
+    }
+
     private void Start()
     {
         _camera = GetComponent<Camera>();

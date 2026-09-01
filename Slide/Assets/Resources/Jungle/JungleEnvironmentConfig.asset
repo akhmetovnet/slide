@@ -12,11 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78e59a3d1a5b4cbd9e1f3624b2ca60f3, type: 3}
   m_Name: JungleEnvironmentConfig
   m_EditorClassIdentifier: 
-  _cityBaselineY: 0
   _layers:
   - Name: Sky
     ResourcePath: Environment/sky
-    Offset: {x: 0, y: 0}
+    Offset: {x: 0, y: 2}
     VerticalSpeed: 0.015
     VerticalRepeatMultiplier: 1
     AlignBottomToBaseline: 0
@@ -25,20 +24,20 @@ MonoBehaviour:
     Alpha: 1
   - Name: Sky 1
     ResourcePath: Environment/clouds_far
-    Offset: {x: 0, y: 0}
+    Offset: {x: 0, y: 2}
     VerticalSpeed: 0.035
     VerticalRepeatMultiplier: 1
     AlignBottomToBaseline: 0
-    HorizontalSpeed: 0.12
+    HorizontalSpeed: 0
     SortingOrder: 1
     Alpha: 0.72
   - Name: Sky 2
     ResourcePath: Environment/clouds_near
-    Offset: {x: 0, y: 0}
+    Offset: {x: 0, y: 2}
     VerticalSpeed: 0.05
     VerticalRepeatMultiplier: 1
     AlignBottomToBaseline: 0
-    HorizontalSpeed: -0.1
+    HorizontalSpeed: 0
     SortingOrder: 2
     Alpha: 0.52
   - Name: City 4
@@ -47,7 +46,7 @@ MonoBehaviour:
     VerticalSpeed: 0.12
     VerticalRepeatMultiplier: 1.902
     AlignBottomToBaseline: 1
-    HorizontalSpeed: 0.03
+    HorizontalSpeed: 0
     SortingOrder: 10
     Alpha: 1
   - Name: City 3
@@ -56,8 +55,8 @@ MonoBehaviour:
     VerticalSpeed: 0.12
     VerticalRepeatMultiplier: 2.1073
     AlignBottomToBaseline: 1
-    HorizontalSpeed: 0.06
-    SortingOrder: 20
+    HorizontalSpeed: 0
+    SortingOrder: 30
     Alpha: 1
   - Name: City 2
     ResourcePath: Environment/city_near
@@ -65,8 +64,8 @@ MonoBehaviour:
     VerticalSpeed: 0.12
     VerticalRepeatMultiplier: 2.8445
     AlignBottomToBaseline: 1
-    HorizontalSpeed: 0.09
-    SortingOrder: 30
+    HorizontalSpeed: 0
+    SortingOrder: 20
     Alpha: 1
   - Name: City 1
     ResourcePath: Environment/city_foreground
@@ -74,7 +73,7 @@ MonoBehaviour:
     VerticalSpeed: 0.12
     VerticalRepeatMultiplier: 3.7793
     AlignBottomToBaseline: 0
-    HorizontalSpeed: 0.12
+    HorizontalSpeed: 0
     SortingOrder: 40
     Alpha: 1
   - Name: Glass
@@ -83,25 +82,24 @@ MonoBehaviour:
     VerticalSpeed: 0.31
     VerticalRepeatMultiplier: 1
     AlignBottomToBaseline: 0
-    HorizontalSpeed: -0.05
+    HorizontalSpeed: 0
     SortingOrder: 50
     Alpha: 0.42
   _visuals:
     LeftWallPath: Start/wall_left
     RightWallPath: Start/wall_right
     StartPlatformPath: Start/start_platform
+    StartPlatformOffset: {x: 0, y: 0.5}
     StartDoorFramePath: Start/start_door
     LeftDoorPath: Start/door_left
     RightDoorPath: Start/door_right
     WallVfxPath: VFX/wall
+    LeftWallLightningLocalX: 0.175
+    RightWallLightningLocalX: -0.175
     PlatformPaths:
     - Platforms/platform_1
     - Platforms/platform_2
     - Platforms/platform_3
-    RocketFramePaths:
-    - Rockets/rocket_1
-    - Rockets/rocket_2
-    - Rockets/rocket_3
     StaticBombPath: Enemies/enemy_static
     MovingBombPath: Enemies/enemy_moving
     BarrierLeftPath: Enemies/barrier_left
@@ -119,9 +117,9 @@ MonoBehaviour:
       PopUpSpikes: 0.13
       StickySurface: 0.1
       RotatingLaser: 0.1
+    RotatingSpikesPlaceholderPath: Challenge/Hazards/blades
     RotatingSpikesDegreesPerSecond: 105
     RotatingSpikesStartAngle: 0
-    RotatingSpikesPlaceholderPath: Challenge/Hazards/blades
     RotatingSpikesSectionCount: 4
     RotatingSpikesSectionDistance: 0.48
     RotatingSpikesColliderRadius: 0.18
@@ -135,8 +133,8 @@ MonoBehaviour:
     PopUpHiddenHeight: 0.55
     PopUpActiveHeight: 0.95
     PopUpColliderSize: {x: 0.85, y: 0.42}
-    StickyMovementMultiplier: 0.52
     StickyVisualPath: Challenge/Hazards/sticky
+    StickyMovementMultiplier: 0.52
     StickyColliderSize: {x: 1.2, y: 0.36}
     RotatingBarrierDegreesPerSecond: 72
     RotatingBarrierStartAngle: 0
@@ -145,3 +143,4 @@ MonoBehaviour:
     RotatingBarrierIsContinuous: 1
     RotatingBarrierActiveTime: 1
     RotatingBarrierInactiveTime: 0.4
+  _cityBaselineY: 0

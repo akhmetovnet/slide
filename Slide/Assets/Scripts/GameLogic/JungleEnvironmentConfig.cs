@@ -37,14 +37,16 @@ namespace GameLogic
         public string LeftWallPath;
         public string RightWallPath;
         public string StartPlatformPath;
+        public Vector2 StartPlatformOffset;
         public string StartDoorFramePath;
         public string LeftDoorPath;
         public string RightDoorPath;
         public string WallVfxPath;
+        public float LeftWallLightningLocalX = 0.175f;
+        public float RightWallLightningLocalX = -0.175f;
 
         [Header("Platforms")]
         public string[] PlatformPaths = new string[0];
-        public string[] RocketFramePaths = new string[0];
 
         [Header("Existing hazards")]
         public string StaticBombPath;

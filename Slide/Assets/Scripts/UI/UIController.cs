@@ -296,12 +296,6 @@ namespace UI
         {
             _soundController.PlaySound("push_button");
 
-            if (Application.CanStreamedLevelBeLoaded("CharacterMenu"))
-            {
-                SceneManager.LoadScene("CharacterMenu");
-                return;
-            }
-
             _skinsTransform.localScale = Vector3.zero;
             _skinsTransform.DOScale(Vector3.one, .5f).SetEase(Ease.OutBack);
             
@@ -470,25 +464,17 @@ namespace UI
             var offerAvailable = offer != null &&
                                  _unityStore.IsProductAvailable(offer.ProductId);
             var showNoAds = PlayerPrefs.GetInt("NoAds", 0) == 0;
-            var noAdsPrice = showNoAds
-                ? _unityStore.GetLocalizedPrice("no_ads")
-                : string.Empty;
-
             _resultMenuView.Show(
                 isWin,
                 _gameController.Mode,
                 _gameController.Coins,
                 _gameController.Points,
                 _gameController.Record,
-                _gameController.PlatformsPassed,
-                _gameController.LastCoins,
-                _gameController.SessionLevelsCompleted,
                 missionNumber,
                 offer,
                 offerPrice,
                 offerAvailable,
                 showNoAds,
-                noAdsPrice,
                 showNoAds && _unityStore.IsProductAvailable("no_ads"));
         }
 
@@ -740,7 +726,7 @@ namespace UI
                 _deathPanel.SetActive(false);
                 _continuePanel.SetActive(false);
                 OpenGamePanel(false);
-                Observable.NextFrame().Subscribe(_ => _gameController.PlayGame());
+                _gameController.PlayGame();
             }
 
             if (_gameController.Mode == GameMode.Survival)

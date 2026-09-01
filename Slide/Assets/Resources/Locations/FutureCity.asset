@@ -1,0 +1,317 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa66e9e664903496aa6c3148ef15b109, type: 3}
+  m_Name: FutureCity
+  m_EditorClassIdentifier: Assembly-CSharp::GameLogic.LocationConfig
+  Location: 0
+  FirstLevel: 1
+  LastLevel: 10
+  ResourceRoot: FutureCity
+  EnvironmentLayers:
+  - Name: Sky
+    ResourcePath: Environment/sky
+    Offset: {x: 0, y: 0}
+    VerticalSpeed: 0.015
+    VerticalRepeatMultiplier: 1
+    VerticalRepeatHeight: 0
+    AlignBottomToBaseline: 0
+    HorizontalSpeed: 0
+    SortingOrder: 0
+    Alpha: 1
+  - Name: Far City
+    ResourcePath: Environment/city_4
+    Offset: {x: 0, y: -0.9}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 1
+    VerticalRepeatHeight: 8.05
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0
+    SortingOrder: 10
+    Alpha: 1
+  - Name: Mid City A
+    ResourcePath: Environment/city_3
+    Offset: {x: 0, y: -2.3}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 1
+    VerticalRepeatHeight: 8.05
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0
+    SortingOrder: 20
+    Alpha: 1
+  - Name: Far Clouds
+    ResourcePath: Environment/clouds_far
+    Offset: {x: 0, y: 3.2}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 1
+    VerticalRepeatHeight: 8.05
+    AlignBottomToBaseline: 0
+    HorizontalSpeed: 0.27
+    SortingOrder: 1
+    Alpha: 0.72
+  - Name: Mid City B
+    ResourcePath: Environment/city_2
+    Offset: {x: 0, y: -1.65}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 1
+    VerticalRepeatHeight: 8.05
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0
+    SortingOrder: 30
+    Alpha: 1
+  - Name: Near City
+    ResourcePath: Environment/city_1
+    Offset: {x: 0, y: 0}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 1
+    VerticalRepeatHeight: 8.05
+    AlignBottomToBaseline: 1
+    HorizontalSpeed: 0
+    SortingOrder: 40
+    Alpha: 1
+  - Name: Near Clouds
+    ResourcePath: Environment/clouds_near
+    Offset: {x: 0, y: -3.2}
+    VerticalSpeed: 0.12
+    VerticalRepeatMultiplier: 1
+    VerticalRepeatHeight: 8.05
+    AlignBottomToBaseline: 0
+    HorizontalSpeed: -0.2
+    SortingOrder: 2
+    Alpha: 0.36
+  StartArea:
+    HideBaseBackground: 1
+    LeftWallPath: Start/wall_left
+    RightWallPath: Start/wall_right
+    StartPlatformPath: Start/start_platform
+    StartPlatformOffset: {x: 0, y: 0}
+    StartDoorFramePath: Start/start_door
+    LeftDoorPath: Start/door_left
+    RightDoorPath: Start/door_right
+    WallVfxPath: VFX/Wall
+    WallVfxFramesPerSecond: 10
+    LeftWallLightningLocalX: 0
+    RightWallLightningLocalX: 0
+    OverrideWallLightningOffsets: 0
+    StartWallsAreOut: 1
+  Platforms:
+    Variants:
+    - ResourcePath: Platforms/platform_1
+      FirstLocalLevel: 1
+      ColliderAngle: 7.12
+      FlipSprite: 0
+    - ResourcePath: Platforms/platform_2
+      FirstLocalLevel: 4
+      ColliderAngle: 14.04
+      FlipSprite: 1
+    - ResourcePath: Platforms/platform_3
+      FirstLocalLevel: 8
+      ColliderAngle: 26.56
+      FlipSprite: 0
+  HazardVisuals:
+    AllowBaseVisualFallback: 1
+    StaticBombPath: 
+    MovingBombPath: 
+    DronePath: Enemies/enemy_drone
+    BarrierLeftPath: Enemies/enemy_laser_left
+    BarrierRightPath: Enemies/enemy_laser_right
+    StaticBombVfxPath: VFX/Circle
+    MovingBombVfxPath: VFX/Circle
+    BarrierVfxPath: VFX/Long
+  Hazards:
+    DefaultWeights:
+      StaticBomb: 0
+      MovingBomb: 0
+      Laser: 0
+      Drone: 0
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+    RotatingSpikesVisualPath: 
+    RotatingSpikesDegreesPerSecond: 105
+    RotatingSpikesStartAngle: 0
+    RotatingSpikesSectionCount: 4
+    RotatingSpikesSectionDistance: 0.48
+    RotatingSpikesColliderRadius: 0.18
+    RotatingSpikesScale: 0.75
+    PopUpSpikesVisualPath: 
+    PopUpWarningTime: 0.75
+    PopUpExtendTime: 0.28
+    PopUpActiveTime: 0.7
+    PopUpRetractTime: 0.28
+    PopUpCooldownTime: 0.75
+    PopUpHiddenHeight: 0.55
+    PopUpActiveHeight: 0.95
+    PopUpColliderSize: {x: 0.85, y: 0.42}
+    StickyVisualPath: 
+    StickyMovementMultiplier: 0.52
+    StickyColliderSize: {x: 1.2, y: 0.36}
+    RotatingBarrierDegreesPerSecond: 72
+    RotatingBarrierStartAngle: 0
+    RotatingBarrierLength: 1.3
+    RotatingBarrierThickness: 0.18
+    RotatingBarrierIsContinuous: 1
+    RotatingBarrierActiveTime: 1
+    RotatingBarrierInactiveTime: 0.4
+  Difficulty:
+  - FirstLocalLevel: 1
+    LastLocalLevel: 1
+    PlayerSpeed: 2.65
+    HazardChance: 0
+    ObstacleSpeedMultiplier: 0.85
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.75
+      MovingBomb: 0
+      Laser: 0.25
+      Drone: 0
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 2
+    LastLocalLevel: 2
+    PlayerSpeed: 2.6518488
+    HazardChance: 0.35
+    ObstacleSpeedMultiplier: 0.8683674
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.75
+      MovingBomb: 0
+      Laser: 0.25
+      Drone: 0
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 3
+    LastLocalLevel: 3
+    PlayerSpeed: 2.657293
+    HazardChance: 0.35
+    ObstacleSpeedMultiplier: 0.8867347
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.75
+      MovingBomb: 0
+      Laser: 0.25
+      Drone: 0
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 4
+    LastLocalLevel: 4
+    PlayerSpeed: 2.6661797
+    HazardChance: 0.35
+    ObstacleSpeedMultiplier: 0.9051021
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.75
+      MovingBomb: 0
+      Laser: 0.25
+      Drone: 0
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 5
+    LastLocalLevel: 5
+    PlayerSpeed: 2.6783557
+    HazardChance: 0.35
+    ObstacleSpeedMultiplier: 0.9234694
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.75
+      MovingBomb: 0
+      Laser: 0.25
+      Drone: 0
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 6
+    LastLocalLevel: 6
+    PlayerSpeed: 2.6936681
+    HazardChance: 0.48
+    ObstacleSpeedMultiplier: 0.9418368
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.45
+      MovingBomb: 0.08
+      Laser: 0.35
+      Drone: 0.12
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 7
+    LastLocalLevel: 7
+    PlayerSpeed: 2.7119641
+    HazardChance: 0.48
+    ObstacleSpeedMultiplier: 0.9602041
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.45
+      MovingBomb: 0.08
+      Laser: 0.35
+      Drone: 0.12
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 8
+    LastLocalLevel: 8
+    PlayerSpeed: 2.7330904
+    HazardChance: 0.48
+    ObstacleSpeedMultiplier: 0.9785715
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.45
+      MovingBomb: 0.08
+      Laser: 0.35
+      Drone: 0.12
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 9
+    LastLocalLevel: 9
+    PlayerSpeed: 2.7568944
+    HazardChance: 0.48
+    ObstacleSpeedMultiplier: 0.99693877
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.45
+      MovingBomb: 0.08
+      Laser: 0.35
+      Drone: 0.12
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  - FirstLocalLevel: 10
+    LastLocalLevel: 10
+    PlayerSpeed: 2.7832227
+    HazardChance: 0.48
+    ObstacleSpeedMultiplier: 1.0153061
+    MovingPlatformChance: 0
+    HazardWeights:
+      StaticBomb: 0.45
+      MovingBomb: 0.2
+      Laser: 0.35
+      Drone: 0.12
+      RotatingSpikes: 0
+      PopUpSpikes: 0
+      StickySurface: 0
+      RotatingLaser: 0
+  MissionMenuBackground: {fileID: 21300000, guid: f0a332e20130945b593ac3891c4bf605,
+    type: 3}

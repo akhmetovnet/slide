@@ -28,6 +28,7 @@ namespace Installers
             Container.BindInstance(_gameController).AsSingle();
             Container.BindInstance(_heroController).AsSingle();
             Container.BindInstance(_objectController).AsSingle();
+            Container.Bind<CameraController>().FromComponentInHierarchy().AsSingle();
             Container.BindInstance(_wallController).AsSingle();
             Container.BindInstance(_missionsController).AsSingle();
             Container.BindInstance(_soundController).AsSingle();

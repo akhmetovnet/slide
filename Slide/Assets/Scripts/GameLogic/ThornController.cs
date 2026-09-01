@@ -122,10 +122,12 @@ namespace GameLogic
                 -11f - index * 2f + Mathf.Sin(lineAngle) * positionX,
                 0f);
             var type = ThornType.None;
+            var locationConfig = LocationCatalog.GetActive(_gameController);
             var isFutureCity = FutureCityTheme.IsActive(_gameController);
-            var isJungle = JungleTheme.IsActive(_gameController);
             var challenge = _gameController.CurrentChallengeDefinition;
-            type = challenge != null ? SelectWeightedType(challenge.HazardWeights) : SelectLegacyType(isFutureCity);
+            type = challenge != null
+                ? SelectWeightedType(challenge.HazardWeights, _random.NextFloat(), locationConfig)
+                : SelectLegacyType(isFutureCity);
             _countType = (type == _lastType) ? _countType + 1 : 0;
             _lastType = type;
             if (isTutorial && index < 2)
@@ -138,7 +140,7 @@ namespace GameLogic
                     0f);
             }
 
-            ApplyLocationVisual(type, isFutureCity, isJungle);
+            ApplyLocationVisual(type, locationConfig);
             var speedMultiplier = challenge?.ObstacleSpeedMultiplier ?? 1f;
             
             switch (type)
@@ -193,8 +195,7 @@ namespace GameLogic
                 case ThornType.RotatingLaser:
                     SetBaseHazardsActive(false);
                     EnsureDynamicHazard();
-                    _dynamicHazard.Configure(type, speedMultiplier,
-                        JungleTheme.Config != null ? JungleTheme.Config.Hazards : null);
+                    _dynamicHazard.Configure(type, speedMultiplier, locationConfig);
                     break;
             }    
         }
@@ -212,26 +213,65 @@ namespace GameLogic
             return (ThornType)types[_random.NextInt(0, types.Count)];
         }
 
-        private ThornType SelectWeightedType(ChallengeHazardWeights weights)
+        public static ThornType SelectWeightedType(ChallengeHazardWeights weights,
+            float normalizedRoll, LocationConfig config = null)
         {
             var types = new[]
             {
-                ThornType.Static, ThornType.Kinematic, ThornType.Laser, ThornType.Drone
+                ThornType.Static, ThornType.Kinematic, ThornType.Laser, ThornType.Drone,
+                ThornType.RotatingSpikes, ThornType.PopUpSpikes,
+                ThornType.StickySurface, ThornType.RotatingLaser
             };
             var total = 0f;
             foreach (var candidate in types)
-                total += Mathf.Max(0f, weights.Get(candidate));
+            {
+                if (CanSpawn(candidate, config))
+                    total += Mathf.Max(0f, weights.Get(candidate));
+            }
             if (total <= 0f)
                 return ThornType.Static;
 
-            var roll = _random.NextFloat() * total;
+            var roll = Mathf.Clamp01(normalizedRoll) * total;
             foreach (var candidate in types)
             {
-                roll -= Mathf.Max(0f, weights.Get(candidate));
+                if (!CanSpawn(candidate, config))
+                    continue;
+                var weight = Mathf.Max(0f, weights.Get(candidate));
+                if (weight <= 0f)
+                    continue;
+                roll -= weight;
                 if (roll <= 0f)
                     return candidate;
             }
             return ThornType.Static;
+        }
+
+        private static bool CanSpawn(ThornType type, LocationConfig config)
+        {
+            if (config == null || type == ThornType.Static || type == ThornType.Kinematic ||
+                type == ThornType.Laser || type == ThornType.Drone)
+                return true;
+
+            var settings = config.Hazards;
+            if (settings == null)
+                return false;
+
+            switch (type)
+            {
+                case ThornType.RotatingSpikes:
+                    return !string.IsNullOrEmpty(settings.RotatingSpikesVisualPath);
+                case ThornType.PopUpSpikes:
+                    return !string.IsNullOrEmpty(settings.PopUpSpikesVisualPath);
+                case ThornType.StickySurface:
+                    return !string.IsNullOrEmpty(settings.StickyVisualPath);
+                case ThornType.RotatingLaser:
+                    return config.HazardVisuals != null &&
+                           !string.IsNullOrEmpty(config.HazardVisuals.BarrierLeftPath) &&
+                           !string.IsNullOrEmpty(config.HazardVisuals.BarrierRightPath) &&
+                           !string.IsNullOrEmpty(config.HazardVisuals.BarrierVfxPath);
+                default:
+                    return false;
+            }
         }
 
         private void SetBaseHazardsActive(bool active)
@@ -296,67 +336,49 @@ namespace GameLogic
             CopySorting(_thorn1Renderer, _longLightningRenderer, 1);
         }
 
-        private void ApplyLocationVisual(ThornType type, bool isFutureCity, bool isJungle)
+        private void ApplyLocationVisual(ThornType type, LocationConfig config)
         {
-            if (!isFutureCity && !isJungle)
+            if (config == null || config.HazardVisuals == null)
             {
                 if (_thorn0Renderer != null) _thorn0Renderer.sprite = _originalThorn0Sprite;
                 if (_thorn1Renderer != null) _thorn1Renderer.sprite = _originalThorn1Sprite;
                 if (_thorn2Renderer != null) _thorn2Renderer.sprite = _originalThorn2Sprite;
-                SetLocationVfx(type, false);
+                SetLocationVfx(type, null);
                 return;
             }
 
-            if (isFutureCity)
+            var visuals = config.HazardVisuals;
+            if (_thorn0Renderer != null)
             {
-                if (_thorn0Renderer != null)
-                {
-                    _thorn0Renderer.sprite = type == ThornType.Drone
-                        ? FutureCityTheme.LoadSprite("Enemies/enemy_drone")
-                        : _originalThorn0Sprite;
-                }
-                if (_thorn1Renderer != null)
-                    _thorn1Renderer.sprite = FutureCityTheme.LoadSprite("Enemies/enemy_laser_left");
-                if (_thorn2Renderer != null)
-                    _thorn2Renderer.sprite = FutureCityTheme.LoadSprite("Enemies/enemy_laser_right");
+                var path = type == ThornType.Drone
+                    ? visuals.DronePath
+                    : type == ThornType.Kinematic ? visuals.MovingBombPath : visuals.StaticBombPath;
+                _thorn0Renderer.sprite = LocationTheme.LoadSprite(config, path) ?? _originalThorn0Sprite;
             }
-            else
-            {
-                var jungleConfig = JungleTheme.Config;
-                if (jungleConfig == null)
-                    return;
-                var visuals = jungleConfig.Visuals;
-                if (_thorn0Renderer != null)
-                {
-                    var movingType = type == ThornType.Kinematic || type == ThornType.Drone;
-                    _thorn0Renderer.sprite = JungleTheme.LoadSprite(movingType
-                        ? visuals.MovingBombPath
-                        : visuals.StaticBombPath);
-                }
-                if (_thorn1Renderer != null)
-                    _thorn1Renderer.sprite = JungleTheme.LoadSprite(visuals.BarrierLeftPath);
-                if (_thorn2Renderer != null)
-                    _thorn2Renderer.sprite = JungleTheme.LoadSprite(visuals.BarrierRightPath);
-            }
+            if (_thorn1Renderer != null)
+                _thorn1Renderer.sprite = LocationTheme.LoadSprite(config, visuals.BarrierLeftPath) ??
+                                         _originalThorn1Sprite;
+            if (_thorn2Renderer != null)
+                _thorn2Renderer.sprite = LocationTheme.LoadSprite(config, visuals.BarrierRightPath) ??
+                                         _originalThorn2Sprite;
 
-            SetLocationVfx(type, isJungle);
+            SetLocationVfx(type, config);
         }
 
-        private void SetLocationVfx(ThornType type, bool isJungle)
+        private void SetLocationVfx(ThornType type, LocationConfig config)
         {
-            var jungleConfig = isJungle ? JungleTheme.Config : null;
-            if (isJungle && jungleConfig == null)
-                return;
-            var visuals = jungleConfig != null ? jungleConfig.Visuals : null;
+            var visuals = config != null ? config.HazardVisuals : null;
             if (_circleLightningRenderer != null)
             {
                 if (_circleLightningAnimator != null) _circleLightningAnimator.enabled = false;
                 if (_circleFrameAnimator == null)
                     _circleFrameAnimator = _circleLightningRenderer.gameObject.AddComponent<FutureCityFrameAnimator>();
-                var circleFrames = isJungle
-                    ? JungleTheme.LoadFrames(type == ThornType.Kinematic || type == ThornType.Drone
+                var circlePath = visuals == null ? null :
+                    type == ThornType.Kinematic || type == ThornType.Drone
                         ? visuals.MovingBombVfxPath
-                        : visuals.StaticBombVfxPath)
+                        : visuals.StaticBombVfxPath;
+                var circleFrames = config != null
+                    ? LocationTheme.LoadFrames(config, circlePath)
                     : _dischargeFrames;
                 if (circleFrames == null || circleFrames.Length == 0)
                     circleFrames = FutureCityTheme.LoadFrames("VFX/Circle");
@@ -368,8 +390,8 @@ namespace GameLogic
                 if (_longLightningAnimator != null) _longLightningAnimator.enabled = false;
                 if (_longFrameAnimator == null)
                     _longFrameAnimator = _longLightningRenderer.gameObject.AddComponent<FutureCityFrameAnimator>();
-                var longFrames = isJungle
-                    ? JungleTheme.LoadFrames(visuals.BarrierVfxPath)
+                var longFrames = config != null
+                    ? LocationTheme.LoadFrames(config, visuals.BarrierVfxPath)
                     : _dischargeFrames;
                 if (longFrames == null || longFrames.Length == 0)
                     longFrames = FutureCityTheme.LoadFrames("VFX/Long");

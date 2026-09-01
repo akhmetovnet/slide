@@ -15,6 +15,9 @@ namespace GameLogic
     
     public class BonusController : MonoBehaviour, IDisposable
     {
+        public const float BonusLaneBaseY = -9.75f;
+        public const float EnemyLaneBaseY = -11f;
+
         [SerializeField] private Animator _animatorController;
     
         private SignalBus _signalBus;
@@ -144,9 +147,15 @@ namespace GameLogic
         public void SetPosition(float positionX, float angle, int index)
         {
             LineIndex = index;
-            transform.localPosition = new Vector2(positionX, (-9.75f - index * 2) + Mathf.Sin(angle)*positionX);
+            transform.localPosition = GetSpawnPosition(_type, positionX, angle, index);
             if (_collider != null)
                 _collider.enabled = !_isCollected;
+        }
+
+        public static Vector2 GetSpawnPosition(BonusType type, float positionX, float angle, int index)
+        {
+            var laneBaseY = type == BonusType.MissionItem ? EnemyLaneBaseY : BonusLaneBaseY;
+            return new Vector2(positionX, laneBaseY - index * 2f + Mathf.Sin(angle) * positionX);
         }
 
         public void PrepareForSpawn()

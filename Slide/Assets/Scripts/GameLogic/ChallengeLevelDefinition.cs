@@ -152,16 +152,27 @@ namespace GameLogic
             {
                 var level = i + 1;
                 var isCollectMission = objectives[i] == ChallengeObjectiveType.CollectItems;
+                var location = GetLocation(level);
+                var configuredLocation = LocationCatalog.GetByLevel(level);
+                if (configuredLocation != null)
+                    location = configuredLocation.Location;
+                var difficulty = LocationDifficultyResolver.Resolve(level, location,
+                    new ResolvedLocationDifficulty(
+                        GetPlayerSpeed(level),
+                        GetHazardChance(level),
+                        Mathf.Lerp(0.85f, 1.75f, (level - 1f) / 49f),
+                        0f,
+                        GetHazardWeights(location, level)));
                 result[i] = new ChallengeLevelDefinition
                 {
                     Level = level,
                     Objective = objectives[i],
                     TargetCount = targets[i],
-                    Location = GetLocation(level),
-                    PlayerSpeed = GetPlayerSpeed(level),
-                    HazardChance = GetHazardChance(level),
-                    ObstacleSpeedMultiplier = Mathf.Lerp(0.85f, 1.75f, (level - 1f) / 49f),
-                    MovingPlatformChance = level < 8 ? 0f : Mathf.Lerp(0.08f, 0.3f, (level - 8f) / 42f),
+                    Location = location,
+                    PlayerSpeed = difficulty.PlayerSpeed,
+                    HazardChance = difficulty.HazardChance,
+                    ObstacleSpeedMultiplier = difficulty.ObstacleSpeedMultiplier,
+                    MovingPlatformChance = difficulty.MovingPlatformChance,
                     MissionItemChance = isCollectMission ? 0.88f : 0f,
                     MissionItemVariant = isCollectMission
                         ? collectItemIndex++ % ChallengeAssetCatalog.MissionItemCount
@@ -170,7 +181,7 @@ namespace GameLogic
                     RivalStartLead = objectives[i] == ChallengeObjectiveType.CatchCriminal ? 4f : 0f,
                     RivalEscapeLead = Mathf.Lerp(10f, 7f, (level - 1f) / 49f),
                     CaptureDistance = 0.6f,
-                    HazardWeights = GetHazardWeights(GetLocation(level), level)
+                    HazardWeights = difficulty.HazardWeights
                 };
             }
 

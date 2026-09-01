@@ -10,11 +10,25 @@ namespace GameLogic
         private const string RootName = "[Location Environment]";
         private const string BackgroundLayer = "Background";
         private const float HorizontalLimit = 1.85f;
+        private const float FutureCityCarDirection = 1f;
+        private const float FutureCityCityBaselineY = 0f;
+        private const float FutureCityCityVerticalSpeed = 0.12f;
+        private const float FutureCityCityRepeatHeight = 8.05f;
+        private const float FutureCityCity1OffsetY = 0f;
+        private const float FutureCityCity2OffsetY = -1.65f;
+        private const float FutureCityCity3OffsetY = -2.3f;
+        private const float FutureCityCity4OffsetY = -0.9f;
+        private const float FutureCityCloudVerticalSpeed = FutureCityCityVerticalSpeed;
+        private const float FutureCityCloudRepeatHeight = FutureCityCityRepeatHeight;
+        private const float FutureCityFarCloudOffsetY = 3.2f;
+        private const float FutureCityNearCloudOffsetY = -3.2f;
 
         private readonly List<ParallaxLayer> _layers = new List<ParallaxLayer>();
         private readonly List<AmbientActor> _actors = new List<AmbientActor>();
         private readonly List<SceneThemeEntry> _themeEntries = new List<SceneThemeEntry>();
         private readonly HashSet<EntityId> _themedRendererIds = new HashSet<EntityId>();
+        private readonly List<WallLightning> _wallLightnings = new List<WallLightning>();
+        private readonly HashSet<Transform> _wallLightningTransforms = new HashSet<Transform>();
 
         private GameController _gameController;
         private Camera _camera;
@@ -22,8 +36,8 @@ namespace GameLogic
         private bool _isLocationActive;
         private float _activationCameraY;
         private System.Random _random;
-        private Sprite[] _carFrames;
         private ChallengeLocation _environmentLocation;
+        private LocationConfig _environmentConfig;
 
         public static FutureCityEnvironmentController Create(GameController gameController)
         {
@@ -61,7 +75,8 @@ namespace GameLogic
             if (_content != null && location == _environmentLocation)
                 return;
 
-            SetSceneTheme(ChallengeLocation.DeepBunker);
+            SetSceneTheme(null);
+            ApplyWallLightningOffsets(null);
             _isLocationActive = false;
             if (_content != null)
             {
@@ -72,16 +87,25 @@ namespace GameLogic
 
             _layers.Clear();
             _actors.Clear();
+            _environmentConfig = null;
             BuildEnvironment(location);
         }
 
         private void BuildEnvironment(ChallengeLocation location)
         {
             _environmentLocation = location;
+            _environmentConfig = LocationCatalog.Get(location);
             _content = new GameObject("Content");
             _content.transform.SetParent(transform, false);
 
-            if (location == ChallengeLocation.FutureCity)
+            if (_environmentConfig != null && _environmentConfig.EnvironmentLayers != null &&
+                _environmentConfig.EnvironmentLayers.Length > 0)
+            {
+                BuildConfiguredEnvironment(_environmentConfig);
+                if (location == ChallengeLocation.FutureCity)
+                    BuildAmbientActors();
+            }
+            else if (location == ChallengeLocation.FutureCity)
                 BuildFutureCityEnvironment();
             else if (location == ChallengeLocation.Jungle)
                 BuildJungleEnvironment();
@@ -89,17 +113,70 @@ namespace GameLogic
             _content.SetActive(false);
         }
 
+        private void BuildConfiguredEnvironment(LocationConfig config)
+        {
+            foreach (var layer in config.EnvironmentLayers)
+            {
+                if (layer == null || string.IsNullOrEmpty(layer.ResourcePath))
+                    continue;
+
+                var repeatMultiplier = layer.VerticalRepeatMultiplier;
+                if (layer.VerticalRepeatHeight > 0f)
+                {
+                    var sprite = LocationTheme.LoadSprite(config, layer.ResourcePath);
+                    if (sprite != null && sprite.bounds.size.y > 0f)
+                        repeatMultiplier = layer.VerticalRepeatHeight / sprite.bounds.size.y;
+                }
+
+                AddLayer(layer.Name, layer.ResourcePath, layer.VerticalSpeed,
+                    layer.HorizontalSpeed, layer.SortingOrder, layer.Alpha, layer.Offset,
+                    repeatMultiplier, layer.AlignBottomToBaseline);
+            }
+        }
+
         private void BuildFutureCityEnvironment()
         {
             AddLayer("Sky", "Environment/sky", 0.015f, 0f, 0, 1f);
-            AddLayer("Far City", "Environment/city_4", 0.055f, 0f, 10, 1f);
-            AddLayer("Mid City A", "Environment/city_3", 0.10f, 0f, 20, 1f);
-            AddLayer("Far Clouds", "Environment/clouds_far", 0.13f, 0.27f, 24, 0.72f);
-            AddLayer("Mid City B", "Environment/city_2", 0.17f, 0f, 30, 1f);
-            AddLayer("Near City", "Environment/city_1", 0.24f, 0f, 40, 1f);
-            AddLayer("Near Clouds", "Environment/clouds_near", 0.29f, -0.20f, 44, 0.36f);
+            AddFutureCityCityLayer("Far City", "Environment/city_4", 10, FutureCityCity4OffsetY);
+            AddFutureCityCityLayer("Mid City A", "Environment/city_3", 20, FutureCityCity3OffsetY);
+            AddFutureCityCloudLayer("Far Clouds", "Environment/clouds_far", 0.27f, 1, 0.72f,
+                FutureCityFarCloudOffsetY);
+            AddFutureCityCityLayer("Mid City B", "Environment/city_2", 30, FutureCityCity2OffsetY);
+            AddFutureCityCityLayer("Near City", "Environment/city_1", 40, FutureCityCity1OffsetY);
+            AddFutureCityCloudLayer("Near Clouds", "Environment/clouds_near", -0.20f, 2, 0.36f,
+                FutureCityNearCloudOffsetY);
 
             BuildAmbientActors();
+        }
+
+        private void AddFutureCityCityLayer(string name, string resourcePath, int sortingOrder,
+            float baselineOffsetY)
+        {
+            var sprite = LoadEnvironmentSprite(resourcePath);
+            if (sprite == null)
+            {
+                Debug.LogWarning("Location sprite is missing: " + resourcePath);
+                return;
+            }
+
+            AddLayer(name, resourcePath, FutureCityCityVerticalSpeed, 0f, sortingOrder, 1f,
+                new Vector2(0f, FutureCityCityBaselineY + baselineOffsetY),
+                FutureCityCityRepeatHeight / sprite.bounds.size.y, true);
+        }
+
+        private void AddFutureCityCloudLayer(string name, string resourcePath, float horizontalSpeed,
+            int sortingOrder, float alpha, float baselineOffsetY)
+        {
+            var sprite = LoadEnvironmentSprite(resourcePath);
+            if (sprite == null)
+            {
+                Debug.LogWarning("Location sprite is missing: " + resourcePath);
+                return;
+            }
+
+            AddLayer(name, resourcePath, FutureCityCloudVerticalSpeed, horizontalSpeed, sortingOrder,
+                alpha, new Vector2(0f, FutureCityCityBaselineY + baselineOffsetY),
+                FutureCityCloudRepeatHeight / sprite.bounds.size.y, false);
         }
 
         private void BuildJungleEnvironment()
@@ -161,6 +238,10 @@ namespace GameLogic
 
         private Sprite LoadEnvironmentSprite(string resourcePath)
         {
+            var config = _environmentConfig ?? LocationCatalog.Get(_environmentLocation);
+            if (config != null)
+                return LocationTheme.LoadSprite(config, resourcePath);
+
             return _environmentLocation == ChallengeLocation.Jungle
                 ? Resources.Load<Sprite>("Jungle/" + resourcePath)
                 : FutureCityTheme.LoadSprite(resourcePath);
@@ -168,12 +249,18 @@ namespace GameLogic
 
         private void BuildAmbientActors()
         {
-            _carFrames = FutureCityTheme.LoadFrames("Ambient/Cars");
+            var carSprites = LoadCarSprites();
+            var carPairs = new[]
+            {
+                new DirectionalSprites(carSprites.Car1, carSprites.Car5),
+                new DirectionalSprites(carSprites.Car2, carSprites.Car3),
+                new DirectionalSprites(carSprites.Car6, carSprites.Car4),
+                new DirectionalSprites(carSprites.Car1, carSprites.Car5)
+            };
             for (var i = 0; i < 4; i++)
             {
-                var direction = (i % 2 == 0) ? -1f : 1f;
-                _actors.Add(CreateActor("Car " + (i + 1), AmbientKind.Car, _carFrames,
-                    34 + i, direction, 0.25f + i * 0.035f, i * 0.4f));
+                _actors.Add(CreateCarActor("Car " + (i + 1), carPairs[i],
+                    34 + i, FutureCityCarDirection, 0.25f + i * 0.035f, i * 0.4f));
             }
 
             var birds = FutureCityTheme.LoadSprite("Ambient/birds");
@@ -182,13 +269,40 @@ namespace GameLogic
                 _actors.Add(CreateActor("Birds " + (i + 1), AmbientKind.Birds,
                     new[] { birds }, 36, i == 0 ? 1f : -1f, 0.16f + i * 0.04f, i * 1.1f));
             }
+        }
 
-            var smoke = FutureCityTheme.LoadSprite("Ambient/smoke");
-            for (var i = 0; i < 3; i++)
-            {
-                _actors.Add(CreateActor("Smoke " + (i + 1), AmbientKind.Smoke,
-                    new[] { smoke }, 42, 0f, 0.08f + i * 0.015f, i * 1.7f));
-            }
+        private static CarSprites LoadCarSprites()
+        {
+            // These are directional variants, not frames of one car animation. car_4 and
+            // car_6 are currently identical PNGs, but remain separate resources so the
+            // directional mapping stays explicit if their artwork later diverges.
+            return new CarSprites(
+                FutureCityTheme.LoadSprite("Ambient/Cars/car_1"),
+                FutureCityTheme.LoadSprite("Ambient/Cars/car_2"),
+                FutureCityTheme.LoadSprite("Ambient/Cars/car_3"),
+                FutureCityTheme.LoadSprite("Ambient/Cars/car_4"),
+                FutureCityTheme.LoadSprite("Ambient/Cars/car_5"),
+                FutureCityTheme.LoadSprite("Ambient/Cars/car_6"));
+        }
+
+        private AmbientActor CreateCarActor(string name, DirectionalSprites directionalSprites,
+            int sortingOrder, float direction, float speed, float phase)
+        {
+            var actorObject = new GameObject(name);
+            actorObject.transform.SetParent(_content.transform, false);
+            var renderer = actorObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = direction > 0f
+                ? directionalSprites.RightSprite
+                : directionalSprites.LeftSprite;
+            renderer.sortingLayerName = BackgroundLayer;
+            renderer.sortingOrder = sortingOrder;
+
+            var laneY = RandomRange(-2.55f, 2.55f);
+            var laneX = RandomRange(-1.45f, 1.45f);
+            actorObject.transform.position = new Vector3(laneX, laneY, 0f);
+
+            return new AmbientActor(actorObject.transform, renderer, null, directionalSprites,
+                AmbientKind.Car, direction, speed, phase, laneY, laneX);
         }
 
         private AmbientActor CreateActor(string name, AmbientKind kind, Sprite[] frames,
@@ -205,7 +319,7 @@ namespace GameLogic
             var laneX = RandomRange(-1.45f, 1.45f);
             actorObject.transform.position = new Vector3(laneX, laneY, 0f);
 
-            return new AmbientActor(actorObject.transform, renderer, frames, kind, direction,
+            return new AmbientActor(actorObject.transform, renderer, frames, null, kind, direction,
                 speed, phase, laneY, laneX);
         }
 
@@ -255,6 +369,22 @@ namespace GameLogic
                 switch (actor.Kind)
                 {
                     case AmbientKind.Car:
+                        position.x += actor.Direction * actor.Speed * deltaTime;
+                        if (actor.Direction > 0f && position.x > HorizontalLimit)
+                        {
+                            actor.Direction = -1f;
+                            actor.Renderer.sprite = actor.DirectionalSprites.LeftSprite;
+                        }
+                        else if (actor.Direction < 0f && position.x < -HorizontalLimit)
+                        {
+                            actor.Direction = 1f;
+                            actor.Renderer.sprite = actor.DirectionalSprites.RightSprite;
+                        }
+
+                        position.y = cameraY + actor.LaneY +
+                                     Mathf.Sin(time * 1.15f + actor.Phase) * 0.035f;
+                        actor.Renderer.flipX = false;
+                        break;
                     case AmbientKind.Birds:
                         position.x += actor.Direction * actor.Speed * deltaTime;
                         if (position.x > HorizontalLimit)
@@ -266,18 +396,10 @@ namespace GameLogic
                                      Mathf.Sin(time * 1.15f + actor.Phase) * 0.035f;
                         actor.Renderer.flipX = actor.Direction > 0f;
                         break;
-                    case AmbientKind.Smoke:
-                        position.x = actor.LaneX + Mathf.Sin(time * 0.55f + actor.Phase) * 0.06f;
-                        position.y = cameraY - 2.8f +
-                                     Mathf.Repeat(time * actor.Speed + actor.Phase, 5.6f);
-                        var height01 = Mathf.InverseLerp(cameraY - 2.8f, cameraY + 2.8f, position.y);
-                        actor.Renderer.color = new Color(1f, 1f, 1f,
-                            Mathf.Sin(height01 * Mathf.PI) * 0.48f);
-                        break;
                 }
 
                 actor.Transform.position = position;
-                if (actor.Frames != null && actor.Frames.Length > 1)
+                if (actor.Kind == AmbientKind.Birds && actor.Frames != null && actor.Frames.Length > 1)
                 {
                     var frame = Mathf.FloorToInt((time + actor.Phase) * 8f) % actor.Frames.Length;
                     actor.Renderer.sprite = actor.Frames[frame];
@@ -296,10 +418,14 @@ namespace GameLogic
 
             _content.SetActive(isActive);
             CacheSceneThemeEntries();
-            SetSceneTheme(isActive ? _environmentLocation : ChallengeLocation.DeepBunker);
+            CacheWallLightnings();
+            ChallengeLocation? location = isActive ? _environmentLocation : null;
+            SetSceneTheme(location);
+            ApplyWallLightningOffsets(location);
+            ConfigureStartArea(location);
         }
 
-        private void SetSceneTheme(ChallengeLocation location)
+        private void SetSceneTheme(ChallengeLocation? location)
         {
             foreach (var entry in _themeEntries)
                 entry.SetTheme(location);
@@ -316,8 +442,12 @@ namespace GameLogic
 
         private bool IsEnvironmentActive()
         {
-            if (_environmentLocation != ChallengeLocation.FutureCity &&
-                _environmentLocation != ChallengeLocation.Jungle)
+            if (_gameController == null || _gameController.Mode != GameMode.Challenge)
+                return false;
+
+            var config = _environmentConfig ?? LocationCatalog.Get(_environmentLocation);
+            if (config == null || config.EnvironmentLayers == null ||
+                config.EnvironmentLayers.Length == 0)
                 return false;
 
             return GetEnvironmentLocation() == _environmentLocation;
@@ -338,6 +468,56 @@ namespace GameLogic
                 if (IsThemedTexture(textureName))
                     _themeEntries.Add(new SceneThemeEntry(renderer, textureName));
             }
+        }
+
+        private void CacheWallLightnings()
+        {
+            foreach (var transform in Resources.FindObjectsOfTypeAll<Transform>())
+            {
+                if (transform == null || !transform.gameObject.scene.IsValid())
+                    continue;
+
+                var isLeftWall = transform.name == "WallL1" || transform.name == "WallL2";
+                var isRightWall = transform.name == "WallR1" || transform.name == "WallR2";
+                if (!isLeftWall && !isRightWall)
+                    continue;
+
+                foreach (var child in transform.GetComponentsInChildren<Transform>(true))
+                {
+                    if (child == transform || !child.name.StartsWith("Lightning", StringComparison.Ordinal) ||
+                        !_wallLightningTransforms.Add(child))
+                        continue;
+
+                    _wallLightnings.Add(new WallLightning(child, isLeftWall));
+                }
+            }
+        }
+
+        private void ApplyWallLightningOffsets(ChallengeLocation? location)
+        {
+            var config = location.HasValue ? LocationCatalog.Get(location.Value) : null;
+            var visuals = config != null ? config.StartArea : null;
+            foreach (var lightning in _wallLightnings)
+            {
+                lightning.SetLocalX(visuals == null || !visuals.OverrideWallLightningOffsets
+                    ? lightning.OriginalLocalPosition.x
+                    : lightning.IsLeft
+                        ? visuals.LeftWallLightningLocalX
+                        : visuals.RightWallLightningLocalX);
+            }
+        }
+
+        private void ConfigureStartArea(ChallengeLocation? location)
+        {
+            var wallController = FindAnyObjectByType<WallController>();
+            if (wallController == null)
+                return;
+
+            var config = location.HasValue ? LocationCatalog.Get(location.Value) : null;
+            var visuals = config != null ? config.StartArea : null;
+            wallController.ConfigureStartArea(
+                visuals != null ? visuals.StartPlatformOffset : Vector2.zero,
+                visuals == null || visuals.StartWallsAreOut);
         }
 
         private static bool IsThemedTexture(string textureName)
@@ -361,8 +541,31 @@ namespace GameLogic
         private enum AmbientKind
         {
             Car,
-            Birds,
-            Smoke
+            Birds
+        }
+
+        private sealed class WallLightning
+        {
+            private readonly Transform _transform;
+            public readonly bool IsLeft;
+            public readonly Vector3 OriginalLocalPosition;
+
+            public WallLightning(Transform transform, bool isLeft)
+            {
+                _transform = transform;
+                IsLeft = isLeft;
+                OriginalLocalPosition = transform.localPosition;
+            }
+
+            public void SetLocalX(float x)
+            {
+                if (_transform == null)
+                    return;
+
+                var position = _transform.localPosition;
+                position.x = x;
+                _transform.localPosition = position;
+            }
         }
 
         private sealed class ParallaxLayer
@@ -420,19 +623,22 @@ namespace GameLogic
             public readonly Transform Transform;
             public readonly SpriteRenderer Renderer;
             public readonly Sprite[] Frames;
+            public readonly DirectionalSprites DirectionalSprites;
             public readonly AmbientKind Kind;
-            public readonly float Direction;
+            public float Direction;
             public readonly float Speed;
             public readonly float Phase;
             public readonly float LaneY;
             public readonly float LaneX;
 
             public AmbientActor(Transform transform, SpriteRenderer renderer, Sprite[] frames,
-                AmbientKind kind, float direction, float speed, float phase, float laneY, float laneX)
+                DirectionalSprites directionalSprites, AmbientKind kind, float direction, float speed,
+                float phase, float laneY, float laneX)
             {
                 Transform = transform;
                 Renderer = renderer;
                 Frames = frames;
+                DirectionalSprites = directionalSprites;
                 Kind = kind;
                 Direction = direction;
                 Speed = speed;
@@ -442,12 +648,46 @@ namespace GameLogic
             }
         }
 
+        private sealed class DirectionalSprites
+        {
+            public readonly Sprite RightSprite;
+            public readonly Sprite LeftSprite;
+
+            public DirectionalSprites(Sprite rightSprite, Sprite leftSprite)
+            {
+                RightSprite = rightSprite;
+                LeftSprite = leftSprite;
+            }
+        }
+
+        private readonly struct CarSprites
+        {
+            public readonly Sprite Car1;
+            public readonly Sprite Car2;
+            public readonly Sprite Car3;
+            public readonly Sprite Car4;
+            public readonly Sprite Car5;
+            public readonly Sprite Car6;
+
+            public CarSprites(Sprite car1, Sprite car2, Sprite car3, Sprite car4,
+                Sprite car5, Sprite car6)
+            {
+                Car1 = car1;
+                Car2 = car2;
+                Car3 = car3;
+                Car4 = car4;
+                Car5 = car5;
+                Car6 = car6;
+            }
+        }
+
         private sealed class SceneThemeEntry
         {
             private readonly SpriteRenderer _renderer;
             private readonly Sprite _originalSprite;
             private readonly bool _originalEnabled;
             private readonly string _originalTextureName;
+            private readonly Vector3 _originalLocalPosition;
             private readonly Animator _animator;
             private readonly bool _animatorWasEnabled;
             private FutureCityFrameAnimator _frameAnimator;
@@ -458,11 +698,12 @@ namespace GameLogic
                 _originalSprite = renderer.sprite;
                 _originalEnabled = renderer.enabled;
                 _originalTextureName = originalTextureName;
+                _originalLocalPosition = renderer.transform.localPosition;
                 _animator = renderer.GetComponent<Animator>();
                 _animatorWasEnabled = _animator != null && _animator.enabled;
             }
 
-            public void SetTheme(ChallengeLocation location)
+            public void SetTheme(ChallengeLocation? location)
             {
                 if (_renderer == null)
                     return;
@@ -476,12 +717,15 @@ namespace GameLogic
                         _animator.enabled = _animatorWasEnabled;
                     _renderer.enabled = _originalEnabled;
                     _renderer.sprite = _originalSprite;
+                    _renderer.transform.localPosition = _originalLocalPosition;
                     return;
                 }
 
                 _renderer.enabled = !visual.Hide && _originalEnabled;
                 if (visual.Sprite != null)
                     _renderer.sprite = visual.Sprite;
+                _renderer.transform.localPosition = _originalLocalPosition +
+                    new Vector3(visual.LocalPositionOffset.x, visual.LocalPositionOffset.y, 0f);
 
                 if (visual.AnimationFrames == null || visual.AnimationFrames.Length == 0)
                 {
@@ -500,49 +744,27 @@ namespace GameLogic
                     Mathf.Abs(_renderer.GetEntityId().GetHashCode() % 10) * 0.03f);
             }
 
-            private static LocationVisual GetVisual(ChallengeLocation location, string textureName)
+            private static LocationVisual GetVisual(ChallengeLocation? location, string textureName)
             {
-                if (location == ChallengeLocation.FutureCity)
-                    return GetFutureCityVisual(textureName);
-                if (location == ChallengeLocation.Jungle)
-                    return GetJungleVisual(textureName);
-                return default;
-            }
-
-            private static LocationVisual GetFutureCityVisual(string textureName)
-            {
-                switch (textureName)
-                {
-                    case "bg_blue": return LocationVisual.Hidden;
-                    case "fg_wall_l": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/wall_left"));
-                    case "fg_wall_r": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/wall_right"));
-                    case "spr_start_platform": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/start_platform"));
-                    case "start_door": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/start_door"));
-                    case "door_l": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/door_left"));
-                    case "door_r": return LocationVisual.SpriteOnly(FutureCityTheme.LoadSprite("Start/door_right"));
-                    case "vfx_discharge_wall": return LocationVisual.Animated(FutureCityTheme.LoadFrames("VFX/Wall"), 10f);
-                    default: return default;
-                }
-            }
-
-            private static LocationVisual GetJungleVisual(string textureName)
-            {
-                var config = JungleTheme.Config;
+                var config = location.HasValue ? LocationCatalog.Get(location.Value) : null;
                 if (config == null)
                     return default;
 
-                var visuals = config.Visuals;
+                var visuals = config.StartArea;
+                if (visuals == null)
+                    return default;
                 switch (textureName)
                 {
-                    case "bg_blue": return LocationVisual.Hidden;
-                    case "fg_wall_l": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.LeftWallPath));
-                    case "fg_wall_r": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.RightWallPath));
-                    case "spr_start_platform": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.StartPlatformPath));
-                    case "start_door": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.StartDoorFramePath));
-                    case "door_l": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.LeftDoorPath));
-                    case "door_r": return LocationVisual.SpriteOnly(JungleTheme.LoadSprite(visuals.RightDoorPath));
+                    case "bg_blue": return visuals.HideBaseBackground ? LocationVisual.Hidden : default;
+                    case "fg_wall_l": return LocationVisual.SpriteOnly(LocationTheme.LoadSprite(config, visuals.LeftWallPath));
+                    case "fg_wall_r": return LocationVisual.SpriteOnly(LocationTheme.LoadSprite(config, visuals.RightWallPath));
+                    case "spr_start_platform": return LocationVisual.SpriteOnly(
+                        LocationTheme.LoadSprite(config, visuals.StartPlatformPath), visuals.StartPlatformOffset);
+                    case "start_door": return LocationVisual.SpriteOnly(LocationTheme.LoadSprite(config, visuals.StartDoorFramePath));
+                    case "door_l": return LocationVisual.SpriteOnly(LocationTheme.LoadSprite(config, visuals.LeftDoorPath));
+                    case "door_r": return LocationVisual.SpriteOnly(LocationTheme.LoadSprite(config, visuals.RightDoorPath));
                     case "vfx_discharge_wall": return LocationVisual.Animated(
-                        JungleTheme.LoadFrames(visuals.WallVfxPath), 10f);
+                        LocationTheme.LoadFrames(config, visuals.WallVfxPath), visuals.WallVfxFramesPerSecond);
                     default: return default;
                 }
             }
@@ -556,20 +778,23 @@ namespace GameLogic
                 public readonly Sprite Sprite;
                 public readonly Sprite[] AnimationFrames;
                 public readonly float FramesPerSecond;
+                public readonly Vector2 LocalPositionOffset;
 
                 private LocationVisual(bool isThemed, bool hide, Sprite sprite, Sprite[] animationFrames,
-                    float framesPerSecond)
+                    float framesPerSecond, Vector2 localPositionOffset = default)
                 {
                     IsThemed = isThemed;
                     Hide = hide;
                     Sprite = sprite;
                     AnimationFrames = animationFrames;
                     FramesPerSecond = framesPerSecond;
+                    LocalPositionOffset = localPositionOffset;
                 }
 
-                public static LocationVisual SpriteOnly(Sprite sprite)
+                public static LocationVisual SpriteOnly(Sprite sprite, Vector2 localPositionOffset = default)
                 {
-                    return new LocationVisual(sprite != null, false, sprite, null, 0f);
+                    return new LocationVisual(sprite != null, false, sprite, null, 0f,
+                        localPositionOffset);
                 }
 
                 public static LocationVisual Animated(Sprite[] frames, float framesPerSecond)

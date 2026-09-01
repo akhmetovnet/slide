@@ -15,7 +15,6 @@ public static class RestartMenuSceneBuilder
     private const string ScenePath = "Assets/Scenes/Game.unity";
     private const string ResultSpritesPath = "Assets/Sprites/RestartMenu";
     private const string ContinueSpritesPath = "Assets/Sprites/ContinueOffer";
-    private const string CharacterSpritesPath = "Assets/Sprites/CharacterMenu";
     private const string MissionSpritesPath = "Assets/Sprites/MissionMenu";
     private const string TmpFontPath = "Assets/Font/lofty-s SDF.asset";
     private const string ContinueValueFontPath = "Assets/Fonts/SDONE_0 SDF.asset";
@@ -377,8 +376,8 @@ public static class RestartMenuSceneBuilder
         SetReference(serializedView, "_missionsButton", missions);
         SetReference(serializedView, "_restartNormal", Sprite("result_restart"));
         SetReference(serializedView, "_restartPressed", Sprite("result_restart_pressed"));
-        SetReference(serializedView, "_continueNormal", LoadSprite($"{CharacterSpritesPath}/button_wide.png"));
-        SetReference(serializedView, "_continuePressed", LoadSprite($"{CharacterSpritesPath}/button_wide_low.png"));
+        SetReference(serializedView, "_continueNormal", LoadSprite($"{ResultSpritesPath}/button_wide.png"));
+        SetReference(serializedView, "_continuePressed", LoadSprite($"{ResultSpritesPath}/button_wide_low.png"));
         SetReference(serializedView, "_storeOfferRoot", offerRoot.gameObject);
         SetReference(serializedView, "_noAdsRoot", noAdsRoot.gameObject);
         SetReference(serializedView, "_noAdsPriceText", noAdsPrice);

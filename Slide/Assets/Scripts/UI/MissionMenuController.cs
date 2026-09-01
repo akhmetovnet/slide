@@ -9,9 +9,7 @@ namespace UI
 {
     public sealed class MissionMenuController : MonoBehaviour
     {
-        private const int MissionsPerLocation = 10;
         private const string GameSceneName = "Game";
-        private const string CharacterSceneName = "CharacterMenu";
 
         [Header("Map")]
         [SerializeField] private Image _background;
@@ -85,6 +83,8 @@ namespace UI
                 _preparePanel.SetActive(false);
             if (_settingsPanel != null)
                 _settingsPanel.SetActive(false);
+            if (_storeButton != null)
+                _storeButton.gameObject.SetActive(false);
             SetAlpha(_transitionFlash, 0f);
             SetAlpha(_lightningLine, 0f);
 
@@ -196,15 +196,6 @@ namespace UI
                 SceneManager.LoadScene(GameSceneName);
         }
 
-        public void OpenStore()
-        {
-            if (_isTransitioning)
-                return;
-
-            if (Application.CanStreamedLevelBeLoaded(CharacterSceneName))
-                SceneManager.LoadScene(CharacterSceneName);
-        }
-
         public void ShowSettings()
         {
             if (_settingsPanel == null || _settingsGroup == null || _isTransitioning)
@@ -255,7 +246,6 @@ namespace UI
             }
 
             _backButton?.onClick.AddListener(BackToGame);
-            _storeButton?.onClick.AddListener(OpenStore);
             _settingsButton?.onClick.AddListener(ShowSettings);
             _noAdsButton?.onClick.AddListener(PulseNoAdsButton);
             _startButton?.onClick.AddListener(StartSelectedMission);
@@ -299,7 +289,7 @@ namespace UI
             _selectedLevel = level;
             ChallengeProgress.SelectLevel(level);
             PositionSelection(slot);
-            SetDisplayedLocation((level - 1) / MissionsPerLocation, true);
+            SetDisplayedLocation(ChallengeLevelCatalog.Get(level).Location, true);
             ShowPreparePanel();
         }
 
@@ -332,7 +322,7 @@ namespace UI
 
             _selectedLevel = Mathf.Clamp(_selectedLevel, 1, Mathf.Max(1, nodeCount));
             PositionSelection(_selectedLevel - 1);
-            SetDisplayedLocation((_selectedLevel - 1) / MissionsPerLocation, false);
+            SetDisplayedLocation(ChallengeLevelCatalog.Get(_selectedLevel).Location, false);
             ScrollToMission(_selectedLevel, false);
         }
 
@@ -463,16 +453,16 @@ namespace UI
                 nearestSlot = i;
             }
 
-            SetDisplayedLocation(nearestSlot / MissionsPerLocation, true);
+            SetDisplayedLocation(ChallengeLevelCatalog.Get(nearestSlot + 1).Location, true);
         }
 
-        private void SetDisplayedLocation(int location, bool animateDivider)
+        private void SetDisplayedLocation(ChallengeLocation location, bool animateDivider)
         {
-            location = Mathf.Max(0, location);
-            if (_displayedLocation == location)
+            var locationId = (int)location;
+            if (_displayedLocation == locationId)
                 return;
 
-            _displayedLocation = location;
+            _displayedLocation = locationId;
             if (_background != null)
             {
                 _background.sprite = GetBackground(location);
@@ -481,7 +471,7 @@ namespace UI
 
             if (_futureCityBackgroundGroup != null)
             {
-                var showFutureCityLayers = location == 0;
+                var showFutureCityLayers = location == ChallengeLocation.FutureCity;
                 _futureCityBackgroundGroup.gameObject.SetActive(showFutureCityLayers);
                 _futureCityBackgroundGroup.alpha = showFutureCityLayers ? 1f : 0f;
             }
@@ -577,12 +567,19 @@ namespace UI
                 .OnComplete(() => _lightningLine.DOFade(0f, 0.18f).SetUpdate(true));
         }
 
-        private Sprite GetBackground(int location)
+        private Sprite GetBackground(ChallengeLocation location)
         {
+            var config = LocationCatalog.Get(location);
+            if (config != null && config.MissionMenuBackground != null)
+                return config.MissionMenuBackground;
+
             if (_backgroundSprites == null || _backgroundSprites.Length == 0)
                 return null;
 
-            return _backgroundSprites[Mathf.Clamp(location, 0, _backgroundSprites.Length - 1)];
+            var legacyIndex = location == ChallengeLocation.FutureCity ? 0 :
+                location == ChallengeLocation.Jungle ? 1 :
+                location == ChallengeLocation.SpaceStation ? 2 : 3;
+            return _backgroundSprites[Mathf.Clamp(legacyIndex, 0, _backgroundSprites.Length - 1)];
         }
 
         private static void SetAlpha(Graphic graphic, float alpha)

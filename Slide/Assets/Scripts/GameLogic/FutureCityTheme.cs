@@ -14,14 +14,15 @@ namespace GameLogic
 
         public static bool IsActive(GameController gameController)
         {
-            return gameController != null &&
-                   gameController.Mode == GameMode.Challenge &&
-                   gameController.CurrentChallengeDefinition != null &&
-                   gameController.CurrentChallengeDefinition.Location == ChallengeLocation.FutureCity;
+            return LocationTheme.IsActive(gameController, ChallengeLocation.FutureCity);
         }
 
         public static Sprite LoadSprite(string path)
         {
+            var config = LocationCatalog.Get(ChallengeLocation.FutureCity);
+            if (config != null)
+                return LocationTheme.LoadSprite(config, path);
+
             if (!SpriteCache.TryGetValue(path, out var sprite))
             {
                 sprite = Resources.Load<Sprite>("FutureCity/" + path);
@@ -33,6 +34,10 @@ namespace GameLogic
 
         public static Sprite[] LoadFrames(string path)
         {
+            var config = LocationCatalog.Get(ChallengeLocation.FutureCity);
+            if (config != null)
+                return LocationTheme.LoadFrames(config, path);
+
             if (!FrameCache.TryGetValue(path, out var frames))
             {
                 frames = Resources.LoadAll<Sprite>("FutureCity/" + path)

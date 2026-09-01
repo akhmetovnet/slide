@@ -51,6 +51,8 @@ public sealed class JungleEnvironmentConfigTests
                 "Missing jungle parallax layer: " + layer.ResourcePath);
 
         var visuals = config.Visuals;
+        Assert.That(visuals.LeftWallLightningLocalX, Is.EqualTo(0.175f));
+        Assert.That(visuals.RightWallLightningLocalX, Is.EqualTo(-0.175f));
         var spritePaths = new[]
         {
             visuals.LeftWallPath, visuals.RightWallPath, visuals.StartPlatformPath,
@@ -63,7 +65,6 @@ public sealed class JungleEnvironmentConfigTests
                 "Missing jungle sprite: " + path);
 
         Assert.That(JungleTheme.LoadPlatformFrames(), Has.Length.EqualTo(3));
-        Assert.That(JungleTheme.LoadRocketFrames(), Has.Length.EqualTo(4));
         Assert.That(Resources.LoadAll<Sprite>("Jungle/" + visuals.WallVfxPath).Length,
             Is.GreaterThan(1));
         Assert.That(Resources.LoadAll<Sprite>("Jungle/" + visuals.StaticBombVfxPath).Length,
@@ -96,11 +97,12 @@ public sealed class JungleEnvironmentConfigTests
             "Environment/city_far", "Environment/city_mid", "Environment/city_near",
             "Environment/city_foreground", "Environment/glass"
         };
+        var expectedSortingOrders = new[] { 0, 1, 2, 10, 30, 20, 40, 50 };
         for (var index = 0; index < expectedNames.Length; index++)
         {
             Assert.That(config.Layers[index].Name, Is.EqualTo(expectedNames[index]));
             Assert.That(config.Layers[index].ResourcePath, Is.EqualTo(expectedPaths[index]));
-            Assert.That(config.Layers[index].SortingOrder, Is.EqualTo(index < 3 ? index : (index - 2) * 10));
+            Assert.That(config.Layers[index].SortingOrder, Is.EqualTo(expectedSortingOrders[index]));
         }
 
         const float sharedRepeatHeight = 8.05f;
@@ -113,17 +115,17 @@ public sealed class JungleEnvironmentConfigTests
             Assert.That(sprite.bounds.size.y * city.VerticalRepeatMultiplier,
                 Is.EqualTo(sharedRepeatHeight).Within(0.01f), city.Name);
             Assert.That(city.VerticalSpeed, Is.EqualTo(0.12f), city.Name);
+            Assert.That(city.HorizontalSpeed, Is.Zero, city.Name);
             if (index > 3)
-            {
                 Assert.That(city.VerticalSpeed,
                     Is.EqualTo(config.Layers[index - 1].VerticalSpeed), city.Name);
-                Assert.That(city.HorizontalSpeed,
-                    Is.GreaterThan(config.Layers[index - 1].HorizontalSpeed), city.Name);
-            }
         }
 
         Assert.That(config.Layers[6].AlignBottomToBaseline, Is.False,
             "City 1 uses its built-in grass horizon as the foreground anchor.");
+        Assert.That(config.Layers[1].HorizontalSpeed, Is.Zero, "Sky 1");
+        Assert.That(config.Layers[2].HorizontalSpeed, Is.Zero, "Sky 2");
+        Assert.That(config.Layers[7].HorizontalSpeed, Is.Zero, "Glass");
     }
 }
 #endif

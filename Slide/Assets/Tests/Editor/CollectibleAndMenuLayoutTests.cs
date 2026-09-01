@@ -16,6 +16,7 @@ public sealed class CollectibleAndMenuLayoutTests
     public void FiveMissionItemsShareOneBoundedVisualSize()
     {
         Assert.That(ChallengeAssetCatalog.MissionItemCount, Is.EqualTo(5));
+        Assert.That(CollectibleDefinition.MissionItemVisualDiameter, Is.EqualTo(0.34f).Within(0.0001f));
 
         for (var index = 0; index < ChallengeAssetCatalog.MissionItemCount; index++)
         {
@@ -26,8 +27,39 @@ public sealed class CollectibleAndMenuLayoutTests
             var visibleSize = Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y) * scale;
             Assert.That(visibleSize, Is.EqualTo(CollectibleDefinition.MissionItemVisualDiameter).Within(0.0001f));
             Assert.That(visibleSize, Is.LessThanOrEqualTo(CollectibleDefinition.MaxMissionItemVisualDiameter));
-            Assert.That(CollectibleDefinition.GetMissionItemColliderRadius(sprite, scale), Is.GreaterThan(0f));
+            var colliderRadius = CollectibleDefinition.GetMissionItemColliderRadius(sprite, scale);
+            Assert.That(colliderRadius, Is.GreaterThan(0f));
+            Assert.That(colliderRadius * scale,
+                Is.EqualTo(Mathf.Min(sprite.bounds.size.x, sprite.bounds.size.y) * scale * 0.5f).Within(0.0001f));
         }
+    }
+
+    [Test]
+    public void MissionItemsUseEnemyLaneWhileCoinsAndAccelerationUseBonusLane()
+    {
+        const float positionX = 0.75f;
+        const float angle = 0.2f;
+        const int lineIndex = 4;
+        var slopeOffset = Mathf.Sin(angle) * positionX;
+
+        var missionItemPosition = BonusController.GetSpawnPosition(BonusType.MissionItem, positionX, angle, lineIndex);
+        var coinPosition = BonusController.GetSpawnPosition(BonusType.Coin, positionX, angle, lineIndex);
+        var accelerationPosition = BonusController.GetSpawnPosition(BonusType.Acceleration, positionX, angle, lineIndex);
+
+        Assert.That(missionItemPosition.y,
+            Is.EqualTo(BonusController.EnemyLaneBaseY - lineIndex * 2f + slopeOffset).Within(0.0001f));
+        Assert.That(coinPosition.y,
+            Is.EqualTo(BonusController.BonusLaneBaseY - lineIndex * 2f + slopeOffset).Within(0.0001f));
+        Assert.That(accelerationPosition.y, Is.EqualTo(coinPosition.y).Within(0.0001f));
+    }
+
+    [Test]
+    public void MissionItemLinesAreReservedFromHazards()
+    {
+        Assert.That(ObjectController.IsLineAvailableForHazard(BonusType.MissionItem), Is.False);
+        Assert.That(ObjectController.IsLineAvailableForHazard(BonusType.Coin), Is.True);
+        Assert.That(ObjectController.IsLineAvailableForHazard(BonusType.Acceleration), Is.True);
+        Assert.That(ObjectController.IsLineAvailableForHazard(null), Is.True);
     }
 
     [Test]

@@ -14,7 +14,6 @@ namespace GameLogic
         private static readonly Dictionary<string, Sprite[]> FrameCache =
             new Dictionary<string, Sprite[]>();
         private static Sprite[] _platformFrames;
-        private static Sprite[] _rocketFrames;
         private static JungleEnvironmentConfig _config;
 
         public static JungleEnvironmentConfig Config
@@ -29,16 +28,17 @@ namespace GameLogic
 
         public static bool IsActive(GameController gameController)
         {
-            return gameController != null &&
-                   gameController.Mode == GameMode.Challenge &&
-                   gameController.CurrentChallengeDefinition != null &&
-                   gameController.CurrentChallengeDefinition.Location == ChallengeLocation.Jungle;
+            return LocationTheme.IsActive(gameController, ChallengeLocation.Jungle);
         }
 
         public static Sprite LoadSprite(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return null;
+
+            var locationConfig = LocationCatalog.Get(ChallengeLocation.Jungle);
+            if (locationConfig != null)
+                return LocationTheme.LoadSprite(locationConfig, path);
 
             if (!SpriteCache.TryGetValue(path, out var sprite))
             {
@@ -53,6 +53,10 @@ namespace GameLogic
         {
             if (string.IsNullOrEmpty(path))
                 return Array.Empty<Sprite>();
+
+            var locationConfig = LocationCatalog.Get(ChallengeLocation.Jungle);
+            if (locationConfig != null)
+                return LocationTheme.LoadFrames(locationConfig, path);
 
             if (!FrameCache.TryGetValue(path, out var frames))
             {
@@ -70,6 +74,16 @@ namespace GameLogic
             if (_platformFrames != null)
                 return _platformFrames;
 
+            var locationConfig = LocationCatalog.Get(ChallengeLocation.Jungle);
+            if (locationConfig != null && locationConfig.Platforms != null &&
+                locationConfig.Platforms.Variants != null)
+            {
+                return _platformFrames = locationConfig.Platforms.Variants
+                    .Select(variant => LocationTheme.LoadSprite(locationConfig, variant.ResourcePath))
+                    .Where(sprite => sprite != null)
+                    .ToArray();
+            }
+
             var config = Config;
             if (config == null || config.Visuals.PlatformPaths == null)
                 return _platformFrames = Array.Empty<Sprite>();
@@ -80,23 +94,5 @@ namespace GameLogic
                 .ToArray();
         }
 
-        public static Sprite[] LoadRocketFrames()
-        {
-            if (_rocketFrames != null)
-                return _rocketFrames;
-
-            var config = Config;
-            if (config == null || config.Visuals.RocketFramePaths == null ||
-                config.Visuals.RocketFramePaths.Length < 3)
-                return _rocketFrames = Array.Empty<Sprite>();
-
-            var first = LoadSprite(config.Visuals.RocketFramePaths[0]);
-            var second = LoadSprite(config.Visuals.RocketFramePaths[1]);
-            var third = LoadSprite(config.Visuals.RocketFramePaths[2]);
-            _rocketFrames = new[] { first, second, third, second }
-                .Where(sprite => sprite != null)
-                .ToArray();
-            return _rocketFrames;
-        }
     }
 }
